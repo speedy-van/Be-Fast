@@ -1,0 +1,13 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "globalDependencies": [".nvmrc", "tsconfig.base.json"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    }
+  }
+}

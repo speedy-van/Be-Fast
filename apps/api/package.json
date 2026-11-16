@@ -1,0 +1,19 @@
+{
+  "name": "@be-fast/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node --env-file=../../.env.example --env-file-if-exists=../../.env dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@be-fast/i18n": "workspace:*",
+    "fastify": "5.12.8",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1"
+  }
+}

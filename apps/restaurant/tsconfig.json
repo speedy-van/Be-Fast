@@ -1,0 +1,10 @@
+{
+  "extends": ["expo/tsconfig.base", "../../tsconfig.base.json"],
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "noEmit": true
+  },
+  "include": ["app.config.ts", "app/**/*.tsx"]
+}
