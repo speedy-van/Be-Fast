@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 import { createApi } from "../src/app.js";
 import { readDatabaseUrl } from "../src/config.js";
 
+// The runner budget includes Fastify startup and connection pool teardown.
+const healthTestTimeoutMs = 20_000;
+
 async function requestHealth(databaseUrl: string) {
   const api = createApi(databaseUrl);
   try {
@@ -14,26 +17,34 @@ async function requestHealth(databaseUrl: string) {
 }
 
 describe("GET /health", () => {
-  it("returns 200 after querying the configured PostgreSQL database", async () => {
-    const response = await requestHealth(readDatabaseUrl());
+  it(
+    "returns 200 after querying the configured PostgreSQL database",
+    async () => {
+      const response = await requestHealth(readDatabaseUrl());
 
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ status: "ok" });
-  });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ status: "ok" });
+    },
+    healthTestTimeoutMs,
+  );
 
-  it("returns 503 when PostgreSQL cannot connect to the requested database", async () => {
-    const databaseUrl = new URL(readDatabaseUrl());
-    databaseUrl.pathname = `/missing_${randomUUID()}`;
+  it(
+    "returns 503 when PostgreSQL cannot connect to the requested database",
+    async () => {
+      const databaseUrl = new URL(readDatabaseUrl());
+      databaseUrl.pathname = `/missing_${randomUUID()}`;
 
-    const response = await requestHealth(databaseUrl.href);
+      const response = await requestHealth(databaseUrl.href);
 
-    expect(response.statusCode).toBe(503);
-    expect(response.json()).toEqual({
-      error: {
-        code: "DATABASE_UNAVAILABLE",
-        message: messages.errors.databaseUnavailable,
-        details: {},
-      },
-    });
-  });
+      expect(response.statusCode).toBe(503);
+      expect(response.json()).toEqual({
+        error: {
+          code: "DATABASE_UNAVAILABLE",
+          message: messages.errors.databaseUnavailable,
+          details: {},
+        },
+      });
+    },
+    healthTestTimeoutMs,
+  );
 });

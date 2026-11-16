@@ -2,6 +2,8 @@ import { ESLint } from "eslint";
 import { describe, expect, it } from "vitest";
 
 const eslint = new ESLint();
+// ESLint loads the TypeScript parser on the first case.
+const lintTestTimeoutMs = 60_000;
 
 async function boundaryErrors(code, filePath) {
   const results = await eslint.lintText(code, { filePath });
@@ -35,9 +37,13 @@ describe("workspace import boundaries", () => {
       'export const load = () => require("restaurant");',
       "apps/admin/example.cjs",
     ],
-  ])("rejects %s in %s", async (code, filePath) => {
-    expect(await boundaryErrors(code, filePath)).toHaveLength(1);
-  });
+  ])(
+    "rejects %s in %s",
+    async (code, filePath) => {
+      expect(await boundaryErrors(code, filePath)).toHaveLength(1);
+    },
+    lintTestTimeoutMs,
+  );
 
   it("allows importing local code and shared packages", async () => {
     const code = 'import "../helper.js"; import "@be-fast/contracts";';
