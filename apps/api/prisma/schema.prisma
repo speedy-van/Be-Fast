@@ -527,14 +527,15 @@ model Complaint {
 }
 
 model AdminUser {
-  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email         String         @unique
-  passwordHash  String
-  totpSecret    String
-  role          AdminRole
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime       @default(now()) @updatedAt @db.Timestamptz(3)
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email            String         @unique
+  passwordHash     String
+  totpSecret       String
+  lastTotpTimeStep BigInt?        @db.BigInt
+  role             AdminRole
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime       @default(now()) @updatedAt @db.Timestamptz(3)
   refreshTokens RefreshToken[]
   ledgerEntries LedgerEntry[]
   auditLogs     AuditLog[]

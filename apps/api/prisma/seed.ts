@@ -1,5 +1,9 @@
-import { argon2Sync, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
+import {
+  hashPassword,
+  isProvisioningTotpSecret,
+} from "../src/auth/credentials.ts";
 import { PrismaClient } from "../src/generated/prisma/client.ts";
 
 interface SeedOptions {
@@ -81,24 +85,6 @@ const menuItems = approvedRestaurants.flatMap(
     })),
 );
 
-function hashPassword(password: string | Uint8Array): string {
-  const memory = 65_536;
-  const passes = 3;
-  const parallelism = 1;
-  const nonce = randomBytes(16);
-  const hash = argon2Sync("argon2id", {
-    message: password,
-    nonce,
-    memory,
-    passes,
-    parallelism,
-    tagLength: 32,
-  });
-  const salt = nonce.toString("base64").replace(/=+$/u, "");
-  const digest = hash.toString("base64").replace(/=+$/u, "");
-  return `$argon2id$v=19$m=${memory},t=${passes},p=${parallelism}$${salt}$${digest}`;
-}
-
 function randomTotpSecret(): string {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   return Array.from(randomBytes(32), (byte) => alphabet.charAt(byte & 31)).join(
@@ -115,10 +101,10 @@ function checkAdminCredentials({
     adminPassword === undefined ||
     adminPassword.length < 8 ||
     adminTotpSecret === undefined ||
-    !/^[A-Z2-7]{16,}$/u.test(adminTotpSecret)
+    !isProvisioningTotpSecret(adminTotpSecret)
   ) {
     throw new Error(
-      "Set both SEED_ADMIN_PASSWORD (at least 8 characters) and SEED_ADMIN_TOTP_SECRET (uppercase Base32, at least 16 characters).",
+      "Set both SEED_ADMIN_PASSWORD (at least 8 characters) and SEED_ADMIN_TOTP_SECRET (Base32 encoding of at least 16 bytes).",
     );
   }
 }
@@ -128,6 +114,18 @@ export async function seedDevelopmentDatabase(
 ): Promise<void> {
   checkAdminCredentials(options);
   try {
+    const owners = await Promise.all(
+      restaurants.map(async ({ id }, index) => ({
+        id: fixtureId(300 + index),
+        restaurantId: id,
+        phone: `+96390000002${index}`,
+        role: "OWNER" as const,
+        passwordHash: await hashPassword(randomBytes(32)),
+      })),
+    );
+    const adminPasswordHash = await hashPassword(
+      options.adminPassword ?? randomBytes(32),
+    );
     const schema =
       options.schema ??
       new URL(options.databaseUrl).searchParams.get("schema") ??
@@ -226,13 +224,7 @@ export async function seedDevelopmentDatabase(
         }),
         prisma.restaurantUser.createMany({
           skipDuplicates: true,
-          data: restaurants.map(({ id }, index) => ({
-            id: fixtureId(300 + index),
-            restaurantId: id,
-            phone: `+96390000002${index}`,
-            role: "OWNER",
-            passwordHash: hashPassword(randomBytes(32)),
-          })),
+          data: owners,
         }),
         prisma.menuSection.createMany({
           skipDuplicates: true,
@@ -333,9 +325,7 @@ export async function seedDevelopmentDatabase(
               id: fixtureId(901),
               email: adminEmail,
               role: "SUPER_ADMIN",
-              passwordHash: hashPassword(
-                options.adminPassword ?? randomBytes(32),
-              ),
+              passwordHash: adminPasswordHash,
               totpSecret: options.adminTotpSecret ?? randomTotpSecret(),
             },
           ],

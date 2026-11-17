@@ -51,3 +51,7 @@
 
 - ثُبّتت `prisma` و`@prisma/client` و`@prisma/adapter-pg` بالإصدار المستقر `7.10.1`. يطابق المحوّل PostgreSQL القياسي عبر `pg`. [دليل الترقية إلى Prisma ORM 7](https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7)
 - حُصر السماح بسكربتات تثبيت Prisma ومحركه بالإصدار `7.10.1`. [إعدادات بناء pnpm](https://pnpm.io/settings/build#allowbuilds)
+
+## إصدارات المرحلة M3
+
+- ثُبّت `zod` ‏`4.6.7` لمخططات عقود المصادقة والأخطاء، و`jose` ‏`6.2.17` لإصدار JWT والتحقق منه، و`otplib` ‏`13.6.0` للتحقق من TOTP. [Zod](https://zod.dev/) · [jose](https://github.com/panva/jose) · [otplib](https://otplib.yeojz.dev/)

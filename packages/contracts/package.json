@@ -10,5 +10,9 @@
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@be-fast/domain": "workspace:*",
+    "zod": "4.6.7"
   }
 }

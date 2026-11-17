@@ -5,7 +5,18 @@ export const messages = {
     restaurant: "بي فاست للمطاعم",
   },
   errors: {
+    accountUnavailable: "الحساب غير متاح.",
+    conflict: "تعذّر إكمال العملية بسبب تعارض في البيانات.",
     databaseUnavailable: "قاعدة البيانات غير متاحة حالياً.",
+    forbidden: "لا تملك صلاحية تنفيذ هذا الإجراء.",
+    internalError: "حدث خطأ داخلي. حاول مرة أخرى.",
+    invalidCredentials: "بيانات تسجيل الدخول غير صحيحة.",
+    invalidOtp: "رمز التحقق غير صحيح أو انتهت صلاحيته.",
+    invalidRefreshToken: "انتهت جلسة تسجيل الدخول. سجّل الدخول من جديد.",
+    otpUnavailable: "تعذّر إرسال رمز التحقق حالياً.",
     pageNotFound: "الصفحة غير موجودة.",
+    rateLimited: "محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى.",
+    unauthenticated: "يلزم تسجيل الدخول.",
+    validationError: "بعض البيانات المدخلة غير صالحة.",
   },
 } as const;

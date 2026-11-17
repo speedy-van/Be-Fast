@@ -8,6 +8,7 @@
     "node": "^26.13.1"
   },
   "scripts": {
+    "admin:create": "turbo run build --filter=@be-fast/contracts && corepack pnpm --filter @be-fast/api admin:create",
     "db:check": "node --env-file-if-exists=.env apps/api/scripts/db-check.mjs",
     "db:migrate": "node --env-file-if-exists=.env apps/api/prisma/migrate.ts",
     "db:seed": "corepack pnpm --filter @be-fast/api db:seed",

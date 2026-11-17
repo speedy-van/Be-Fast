@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "admin:create": "prisma generate && node --env-file-if-exists=../../.env prisma/admin-create.ts",
     "build": "prisma generate && tsc -p tsconfig.build.json",
     "db:generate": "prisma generate",
     "db:seed": "prisma generate && node --env-file-if-exists=../../.env prisma/seed.ts",
@@ -11,11 +12,16 @@
     "typecheck": "prisma generate && tsc --noEmit"
   },
   "dependencies": {
+    "@be-fast/contracts": "workspace:*",
+    "@be-fast/domain": "workspace:*",
     "@be-fast/i18n": "workspace:*",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "fastify": "5.12.8",
-    "pg": "8.23.1"
+    "jose": "6.2.17",
+    "otplib": "13.6.0",
+    "pg": "8.23.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/pg": "8.23.1",
