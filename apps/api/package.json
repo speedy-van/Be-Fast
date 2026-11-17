@@ -12,15 +12,18 @@
     "typecheck": "prisma generate && tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1170.0",
     "@be-fast/contracts": "workspace:*",
     "@be-fast/domain": "workspace:*",
     "@be-fast/i18n": "workspace:*",
+    "@fastify/multipart": "10.1.9",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "fastify": "5.12.8",
     "jose": "6.2.17",
     "otplib": "13.6.0",
     "pg": "8.23.1",
+    "sharp": "0.35.5",
     "zod": "4.6.7"
   },
   "devDependencies": {

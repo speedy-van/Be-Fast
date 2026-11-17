@@ -55,3 +55,8 @@
 ## إصدارات المرحلة M3
 
 - ثُبّت `zod` ‏`4.6.7` لمخططات عقود المصادقة والأخطاء، و`jose` ‏`6.2.17` لإصدار JWT والتحقق منه، و`otplib` ‏`13.6.0` للتحقق من TOTP. [Zod](https://zod.dev/) · [jose](https://github.com/panva/jose) · [otplib](https://otplib.yeojz.dev/)
+
+## إصدارات المرحلة M4
+
+- ثُبّت `sharp` ‏`0.35.5` لترميز WebP، و`@fastify/multipart` ‏`10.1.9` لقراءة رفع الملفات ضمن الحدود، و`@aws-sdk/client-s3` ‏`3.1170.0` للمخازن المتوافقة مع S3. [sharp](https://sharp.pixelplumbing.com/api-resize/) · [Fastify Multipart](https://github.com/fastify/fastify-multipart) · [S3](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/javascript_s3_code_examples.html)
+- أضاف pnpm استثناء عمر نشر للإصدارين المثبّتين من `@fastify/multipart` و`@aws-sdk/client-s3` فقط. [إعدادات pnpm](https://pnpm.io/settings/dependency-resolution#minimumreleaseageexclude)

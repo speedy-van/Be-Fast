@@ -1,4 +1,7 @@
 export * from "./auth.js";
+export * from "./geo.js";
+export * from "./media.js";
+export * from "./restaurant.js";
 
 import { z } from "zod";
 

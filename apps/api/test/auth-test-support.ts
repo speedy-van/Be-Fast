@@ -11,6 +11,7 @@ export function openAuthTest(
   options: {
     logger?: ApiOptions["logger"];
     developmentOtp?: boolean;
+    storage?: ApiOptions["storage"];
   } = {},
 ) {
   const test = inject("testDatabase");
@@ -23,6 +24,7 @@ export function openAuthTest(
   const api = createApi(test.url, {
     databaseSchema: test.schema,
     logger: options.logger,
+    storage: options.storage,
     auth: {
       secret,
       now,

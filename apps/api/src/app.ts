@@ -15,10 +15,16 @@ import { registerTokenRoutes } from "./auth/token-routes.js";
 import { createTokenService } from "./auth/tokens.js";
 import { ApiError, registerErrorHandlers } from "./errors.js";
 import { PrismaClient } from "./generated/prisma/client.ts";
+import { registerGeoRoutes } from "./geo/routes.js";
+import { registerMediaRoutes } from "./restaurant/media-routes.js";
+import { registerRestaurantRoutes } from "./restaurant/profile-routes.js";
+import { createLocalStorage } from "./storage-config.js";
+import type { StorageProvider } from "./storage/provider.js";
 
 export interface ApiOptions {
   databaseSchema?: string;
   logger?: FastifyServerOptions["logger"];
+  storage?: StorageProvider;
   auth?: {
     secret: Uint8Array;
     now?: () => Date;
@@ -101,6 +107,16 @@ export function createApi(databaseUrl: string, options: ApiOptions = {}) {
     registerOtpRoutes(api, { db, otp, tokens });
     registerCredentialRoutes(api, { db, otp, tokens, now });
     registerTokenRoutes(api, { tokens });
+    registerGeoRoutes(api, { db });
+    registerRestaurantRoutes(api, { db });
+    registerMediaRoutes(api, {
+      db,
+      now,
+      storage: options.storage ?? createLocalStorage(),
+      secret: createHmac("sha256", secret)
+        .update("be-fast:document-links")
+        .digest(),
+    });
   }
 
   return api;
