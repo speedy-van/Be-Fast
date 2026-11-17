@@ -9,6 +9,7 @@ export class ApiClientError extends Error {
     readonly status: number,
     readonly publicMessage?: string,
     readonly code?: ErrorCode,
+    readonly details?: Record<string, unknown>,
   ) {
     super(`API request failed (${status}).`);
   }
@@ -39,6 +40,7 @@ export async function requestJson<Output>(
       response.status,
       error.success ? error.data.error.message : undefined,
       error.success ? error.data.error.code : undefined,
+      error.success ? error.data.error.details : undefined,
     );
   }
   return schema ? schema.parse(value) : value;

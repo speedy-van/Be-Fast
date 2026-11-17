@@ -22,6 +22,7 @@ import { z } from "zod";
 
 export const errorCodes = [
   "ACCOUNT_UNAVAILABLE",
+  "ACTIVE_ORDERS",
   "BELOW_MINIMUM",
   "CONFLICT",
   "DATABASE_UNAVAILABLE",

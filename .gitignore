@@ -2,8 +2,9 @@ node_modules/
 .turbo/
 .next/
 .expo/
+apps/customer/android/
 apps/restaurant/android/
-apps/restaurant/.android-gradle/
+.android-gradle/
 next-env.d.ts
 dist/
 coverage/

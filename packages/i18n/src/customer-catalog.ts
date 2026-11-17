@@ -1,0 +1,67 @@
+export const customerCatalog = {
+  chooseArea: "اختار منطقتك",
+  governorate: "المحافظة",
+  city: "المدينة",
+  neighborhood: "الحي",
+  noPlaces: "ما في مناطق متاحة حالياً.",
+  selectedAddress: "عنوان التوصيل",
+  browseTitle: "شو حابب تاكل اليوم؟",
+  search: "دوّر على مطعم أو أكلة",
+  applySearch: "بحث",
+  allCategories: "الكل",
+  browse: "تصفّح المطاعم",
+  noRestaurants: "ما لقينا مطاعم مطابقة بهالمنطقة.",
+  noMenu: "المنيو مو متوفر حالياً.",
+  unnamedRestaurant: "مطعم",
+  unnamedItem: "وجبة",
+  available: "متاح للطلب",
+  unavailable: "غير متوفر حالياً",
+  priceUnavailable: "السعر مو متوفر لهالاختيار.",
+  closed: "مغلق الآن",
+  delivery: "التوصيل",
+  minimum: "الحد الأدنى",
+  deliveryTime: "وقت التوصيل التقريبي",
+  minutes: "دقيقة",
+  tryAgain: "إعادة المحاولة",
+  loading: "عم نحمّل…",
+  loadError: "ما قدرنا نحمّل البيانات. حاول مرة تانية.",
+  lastUpdated: "آخر تحديث",
+  lessThanMinuteAgo: "منذ أقل من دقيقة",
+  ago: "منذ",
+  hour: "ساعة",
+  day: "يوم",
+  more: "عرض المزيد",
+  back: "رجوع",
+  confirmArea: "اختر هالحي",
+  openCart: "عرض السلة",
+  size: "الحجم",
+  quantity: "الكمية",
+  increase: "زيادة الكمية",
+  decrease: "تخفيض الكمية",
+  specialInstructions: "ملاحظة للصنف",
+  optionalOptions: "اختياري",
+  requiredOptions: "إلزامي",
+  minimumOptions: "الحد الأدنى للاختيار",
+  maximumOptions: "الحد الأقصى للاختيار",
+  price: "السعر",
+  startsAt: "ابتداءً من",
+  addToCart: "أضف للسلة",
+  cartTitle: "سلتك",
+  emptyCart: "سلتك فاضية.",
+  subtotal: "قيمة الطعام",
+  remove: "إزالة الصنف",
+  continueToCheckout: "إتمام الطلب",
+  cartConflict: "سلتك فيها طلب من مطعم تاني. بدك تفضّيها وتبدأ من جديد؟",
+  replaceCart: "فضّي السلة وأضف الصنف",
+  keepCart: "خلّي السلة متل ما هي",
+} as const;
+
+export function describeCatalogUpdate(updatedAt: number, now = Date.now()) {
+  const minutes = Math.max(0, Math.floor((now - updatedAt) / 60_000));
+  if (minutes >= 1440)
+    return `${customerCatalog.ago} ${Math.floor(minutes / 1440)} ${customerCatalog.day}`;
+  if (minutes >= 60)
+    return `${customerCatalog.ago} ${Math.floor(minutes / 60)} ${customerCatalog.hour}`;
+  if (minutes === 0) return customerCatalog.lessThanMinuteAgo;
+  return `${customerCatalog.ago} ${minutes} ${customerCatalog.minutes}`;
+}

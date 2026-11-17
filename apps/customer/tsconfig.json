@@ -6,5 +6,5 @@
     "jsx": "react-jsx",
     "noEmit": true
   },
-  "include": ["app.config.ts", "app/**/*.tsx"]
+  "include": ["app.config.ts", "app/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"]
 }

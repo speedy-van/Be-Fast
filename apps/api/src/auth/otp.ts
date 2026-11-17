@@ -49,6 +49,10 @@ async function lockOtpKey(
   await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(${scope}::integer, hashtext(${value}))`;
 }
 
+export function lockOtpPhone(tx: Prisma.TransactionClient, phone: string) {
+  return lockOtpKey(tx, phoneLockScope, phone);
+}
+
 export function createOtpService({
   db,
   secret,
@@ -73,7 +77,7 @@ export function createOtpService({
 
     await db.$transaction(async (tx) => {
       // Every send acquires the phone lock before the IP lock.
-      await lockOtpKey(tx, phoneLockScope, phone);
+      await lockOtpPhone(tx, phone);
       await lockOtpKey(tx, ipLockScope, ip);
 
       const requestedAt = now();
@@ -124,7 +128,7 @@ export function createOtpService({
     transaction?: Prisma.TransactionClient,
   ): Promise<boolean> {
     const verify = async (tx: Prisma.TransactionClient): Promise<boolean> => {
-      await lockOtpKey(tx, phoneLockScope, phone);
+      await lockOtpPhone(tx, phone);
       const verifiedAt = now();
       const challenge = await tx.otpChallenge.findFirst({
         where: { phone, purpose },

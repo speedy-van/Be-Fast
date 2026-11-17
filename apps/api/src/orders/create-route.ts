@@ -19,7 +19,11 @@ import { ApiError } from "../errors.js";
 import type { Prisma, PrismaClient } from "../generated/prisma/client.ts";
 import { menuItemScope, minorNumber } from "../menu/shared.js";
 import { notifyPush, type PushProvider } from "./push.js";
-import { orderReadInclude, serializeOrder } from "./read-model.js";
+import {
+  customerOrderView,
+  orderReadInclude,
+  serializeOrder,
+} from "./read-model.js";
 
 type Transaction = Prisma.TransactionClient;
 
@@ -480,8 +484,10 @@ export function registerOrderCreateRoute(
     const { order, restaurantId } = result;
     if (restaurantId !== null)
       await notifyPush(api.log, () => push.newOrder(restaurantId, order.id));
+    const instant = now();
+    const snapshot = serializeOrder(order, { aud: "customer" }, instant);
     return reply
       .code(restaurantId === null ? 200 : 201)
-      .send(serializeOrder(order, { aud: "customer" }, now()));
+      .send(await customerOrderView(db, snapshot, instant));
   });
 }

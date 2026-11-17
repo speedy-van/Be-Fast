@@ -1,10 +1,12 @@
 import type { OrderReadResponse } from "@be-fast/contracts";
 import { maskPhone, ORDER_STATUSES, TERMINAL_STATES } from "@be-fast/domain";
 import type { Principal } from "../auth/tokens.js";
+import { browseCurrencyMode } from "../browse/shared.js";
 import { ApiError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.ts";
 import type { AdminRole, RestaurantRole } from "../generated/prisma/enums.ts";
 import { minorNumber } from "../menu/shared.js";
+import { readOrderTimings } from "./settings.js";
 
 const restaurantPrivacyWindowMs = 24 * 60 * 60 * 1000;
 
@@ -149,6 +151,28 @@ export function orderReadScope(principal: Principal): Prisma.OrderWhereInput {
   }
 }
 
+export async function customerOrderView(
+  db: Prisma.TransactionClient,
+  order: OrderReadResponse,
+  now: Date,
+): Promise<OrderReadResponse> {
+  const [currencyDisplayMode, timing] = await Promise.all([
+    browseCurrencyMode(db),
+    order.status === "PENDING" ? readOrderTimings(db) : null,
+  ]);
+  return {
+    ...order,
+    currencyDisplayMode,
+    serverTime: now.toISOString(),
+    pendingExpiresAt:
+      timing === null
+        ? null
+        : new Date(
+            Date.parse(order.createdAt) + timing.expireAfterSec * 1_000,
+          ).toISOString(),
+  };
+}
+
 export async function readOrderForTransition(
   db: Prisma.TransactionClient,
   id: string,
@@ -160,5 +184,8 @@ export async function readOrderForTransition(
     include: orderReadInclude,
   });
   if (!order) throw new ApiError(404, "NOT_FOUND");
-  return serializeOrder(order, principal, now);
+  const snapshot = serializeOrder(order, principal, now);
+  return principal.aud === "customer"
+    ? customerOrderView(db, snapshot, now)
+    : snapshot;
 }

@@ -61,9 +61,18 @@ async function lockFamily(
 ): Promise<string | null> {
   const token = await tx.refreshToken.findUnique({
     where: { tokenHash },
-    select: { familyId: true },
+    select: { familyId: true, customerId: true },
   });
   if (!token) return null;
+
+  // Account deletion locks the customer before removing token families.
+  if (token.customerId) {
+    const owners = await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "Customer"
+      WHERE "id" = ${token.customerId}::uuid AND "deletedAt" IS NULL FOR KEY SHARE
+    `;
+    if (owners.length !== 1) return null;
+  }
 
   // Every rotation, reuse check, and logout locks the same first token in the family.
   const roots = await tx.$queryRaw<{ id: string }[]>`

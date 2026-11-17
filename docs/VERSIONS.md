@@ -75,3 +75,8 @@
 
 - تستخدم شاشات المطعم `expo-secure-store` ‏`58.0.3` للجلسة، و`expo-document-picker` ‏`58.0.5` لاختيار الصور والمستندات، و`expo-font` ‏`58.0.12` للخط المضمّن من `@expo-google-fonts/ibm-plex-sans-arabic` ‏`0.4.2`. [مرجع Expo SDK](https://docs.expo.dev/versions/v58.0.0/)
 - تستخدم شاشة الطلبات `expo-audio` ‏`58.0.12` للنغمة المحلية، و`expo-network` ‏`58.0.5` لاستعادة السحب عند الاتصال، و`expo-keep-awake` ‏`58.0.4` لإبقاء الشاشة مضاءة. تستخدم اختبارات المكوّنات `react-test-renderer` ‏`19.3.0` و`@types/react-test-renderer` ‏`19.3.1`. [مرجع Expo SDK](https://docs.expo.dev/versions/v58.0.0/)
+
+## إصدارات المرحلة M11
+
+- يستخدم تطبيق العميل `@tanstack/react-query` و`@tanstack/react-query-persist-client` و`@tanstack/query-async-storage-persister` بالإصدار `5.107.1` للقوائم العامة المحفوظة، و`zustand` ‏`5.1.0` مع `@react-native-async-storage/async-storage` ‏`2.2.0` لحفظ السلة والعناوين. [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/plugins/persistQueryClient) · [Zustand](https://zustand.docs.pmnd.rs/integrations/persisting-store-data)
+- يستخدم `expo-crypto` ‏`58.0.8` لمفتاح تكرار الطلب، و`expo-image` ‏`58.0.18` للصور المصغرة، و`expo-location` ‏`58.0.22` لموقع الجهاز الاختياري. يشترك التطبيق مع المطعم في إصدارات الخط و`expo-font` و`expo-network` و`expo-secure-store` ومكتبات اختبار المكوّنات المذكورة في M10. [مرجع Expo SDK](https://docs.expo.dev/versions/v58.0.0/)

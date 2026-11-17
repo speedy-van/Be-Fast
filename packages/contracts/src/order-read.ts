@@ -92,6 +92,9 @@ export const orderReadSchema = z.strictObject({
   finishedAt: instant.nullable(),
   estimatedReadyAt: instant.nullable(),
   estimatedDeliveryAt: instant.nullable(),
+  serverTime: instant.optional(),
+  pendingExpiresAt: instant.nullable().optional(),
+  currencyDisplayMode: z.enum(["OLD", "NEW"]).optional(),
   prepMinutes: z.number().int().nullable(),
   etaMinutes: z.number().int().nullable(),
   needsAttention: z.boolean().optional(),
@@ -107,5 +110,6 @@ export const orderReadSchema = z.strictObject({
 
 export const orderListResponseSchema = z.strictObject({
   orders: z.array(orderReadSchema),
+  currencyDisplayMode: z.enum(["OLD", "NEW"]).optional(),
 });
 export type OrderReadResponse = z.infer<typeof orderReadSchema>;

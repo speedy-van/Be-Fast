@@ -1,4 +1,8 @@
 export { adminShellText } from "./admin-shell.js";
+export { customerApp } from "./customer-app.js";
+export { customerCatalog, describeCatalogUpdate } from "./customer-catalog.js";
+export { customerAccountText, deletedCustomerName } from "./customer-account.js";
+export { customerOrdersText } from "./customer-orders.js";
 export { restaurantApp } from "./restaurant-app.js";
 export { restaurantMenuText } from "./restaurant-menu.js";
 export { restaurantOrders } from "./restaurant-orders.js";
@@ -26,6 +30,7 @@ export const messages = {
   },
   errors: {
     accountUnavailable: "الحساب غير متاح.",
+    activeOrders: "لا يمكن حذف الحساب قبل انتهاء طلباتك النشطة.",
     belowMinimum: "قيمة الطعام أقل من الحد الأدنى للطلب.",
     conflict: "تعذّر إكمال العملية بسبب تعارض في البيانات.",
     databaseUnavailable: "قاعدة البيانات غير متاحة حالياً.",

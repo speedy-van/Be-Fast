@@ -17,6 +17,7 @@ import {
   requireRestaurantRole,
 } from "../auth/access.js";
 import type { Principal } from "../auth/tokens.js";
+import { browseCurrencyMode } from "../browse/shared.js";
 import type { Prisma, PrismaClient } from "../generated/prisma/client.ts";
 import {
   orderReadInclude,
@@ -81,13 +82,25 @@ export function registerOrderReadRoutes(
   api: FastifyInstance,
   { db, now }: { db: PrismaClient; now: () => Date },
 ) {
-  api.get("/customer/orders", (request) =>
-    listOrders(db, requireCustomer(request), now()),
-  );
+  api.get("/customer/orders", async (request, reply) => {
+    const [data, currencyDisplayMode] = await Promise.all([
+      listOrders(db, requireCustomer(request), now()),
+      browseCurrencyMode(db),
+    ]);
+    return reply
+      .header("Cache-Control", "no-store")
+      .send({ ...data, currencyDisplayMode });
+  });
 
-  api.get("/customer/orders/:id", (request) => {
+  api.get("/customer/orders/:id", async (request, reply) => {
     const { id } = readOrderParamsSchema.parse(request.params);
-    return readOrderForTransition(db, id, requireCustomer(request), now());
+    const order = await readOrderForTransition(
+      db,
+      id,
+      requireCustomer(request),
+      now(),
+    );
+    return reply.header("Cache-Control", "no-store").send(order);
   });
 
   api.get("/restaurant/orders/active", orderReaders, async (request) => {

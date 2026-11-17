@@ -7,14 +7,19 @@ import { dirname, join, relative, sep } from "node:path";
 import process from "node:process";
 import { fileURLToPath, URL } from "node:url";
 
-const app = fileURLToPath(new URL("../", import.meta.url));
+const appName = process.argv[2];
+if (appName !== "customer" && appName !== "restaurant")
+  throw new Error("Expected the customer or restaurant app name.");
+
+const workspace = fileURLToPath(new URL("../", import.meta.url));
+const app = join(workspace, "apps", appName);
 const android = join(app, "android");
 const buildToolsVersion = "37.0.0";
 const gradleVersion = "9.4.1";
 const ndkVersion = "27.1.12297006";
 const cmakeVersion = "3.22.1";
 const windows = process.platform === "win32";
-const require = createRequire(import.meta.url);
+const require = createRequire(join(app, "package.json"));
 
 function run(executable, args, cwd, env) {
   const result = spawnSync(executable, args, { cwd, env, stdio: "inherit" });
@@ -180,7 +185,7 @@ ${expoPlugin}`,
     `android {
     externalNativeBuild {
         cmake {
-            buildStagingDirectory rootProject.file("../../../.expo/cxx/restaurant")
+            buildStagingDirectory rootProject.file("../../../.expo/cxx/${appName}")
         }
     }`,
   );
@@ -196,7 +201,7 @@ run(
     "-jar",
     gradle.launcher,
     "--gradle-user-home",
-    join(app, ".android-gradle"),
+    join(workspace, ".android-gradle"),
     "--no-daemon",
     "--console=plain",
     "-Pandroid.builder.sdkDownload=false",

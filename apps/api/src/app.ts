@@ -20,6 +20,7 @@ import { registerTokenRoutes } from "./auth/token-routes.js";
 import { createTokenService } from "./auth/tokens.js";
 import { registerBrowseDetailRoutes } from "./browse/detail-routes.js";
 import { registerBrowseListRoutes } from "./browse/list-routes.js";
+import { registerCustomerAccountRoutes } from "./customer/account-routes.js";
 import { registerCustomerAddressRoutes } from "./customer/address-routes.js";
 import { ApiError, registerErrorHandlers } from "./errors.js";
 import { registerFinanceLedgerRoutes } from "./finance/ledger-routes.js";
@@ -177,6 +178,7 @@ export function createApi(databaseUrl: string, options: ApiOptions = {}) {
     registerComplaintRoutes(api, { db, now });
     registerOrderTransitionRoutes(api, { db, now, push });
     registerCustomerAddressRoutes(api, { db });
+    registerCustomerAccountRoutes(api, { db, now });
     registerBrowseListRoutes(api, { db, now });
     registerBrowseDetailRoutes(api, { db, now });
     registerGeoRoutes(api, { db });

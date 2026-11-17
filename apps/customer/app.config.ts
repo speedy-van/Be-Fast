@@ -6,10 +6,11 @@ const config: ExpoConfig = {
   slug: "be-fast-customer",
   scheme: "befast-customer",
   platforms: ["android"],
-  android: { package: "com.befast.customer" },
+  android: { package: "com.befast.customer", allowBackup: false },
   plugins: [
     "expo-router",
     ["expo-localization", { forcesRTL: true, supportedLocales: ["ar"] }],
+    "expo-secure-store",
   ],
 };
 

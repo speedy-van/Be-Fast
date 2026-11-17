@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 
 const errorMessages = {
   ACCOUNT_UNAVAILABLE: messages.errors.accountUnavailable,
+  ACTIVE_ORDERS: messages.errors.activeOrders,
   BELOW_MINIMUM: messages.errors.belowMinimum,
   CONFLICT: messages.errors.conflict,
   DATABASE_UNAVAILABLE: messages.errors.databaseUnavailable,
