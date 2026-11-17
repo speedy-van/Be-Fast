@@ -15,6 +15,7 @@ const complaintFields = {
 };
 
 export const complaintParamsSchema = z.strictObject({ id: z.uuid() });
+export const resolveNonDeliveryComplaintSchema = z.strictObject({}).optional();
 export const createComplaintSchema = z.strictObject({
   type: complaintType,
   text: z.string().trim().min(1).max(1_000),

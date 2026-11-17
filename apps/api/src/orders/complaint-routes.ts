@@ -3,12 +3,15 @@ import {
   complaintParamsSchema,
   createComplaintSchema,
   readOrderParamsSchema,
+  resolveNonDeliveryComplaintSchema,
   reviewComplaintSchema,
 } from "@be-fast/contracts";
-import type { FastifyInstance } from "fastify";
+import { messages } from "@be-fast/i18n";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { writeAdminAudit } from "../audit.js";
 import { requireAdminRole, requireCustomer } from "../auth/access.js";
 import { ApiError } from "../errors.js";
+import { appendAdminLedgerEntry } from "../finance/ledger.js";
 import { Prisma, type PrismaClient } from "../generated/prisma/client.ts";
 import type {
   ComplaintStatus,
@@ -20,6 +23,7 @@ const complaintReviewers = {
 };
 const openStatuses: ComplaintStatus[] = ["OPEN", "IN_PROGRESS"];
 const newestFirst = [{ createdAt: "desc" as const }, { id: "desc" as const }];
+const reversalReference = "NON_DELIVERY_REVERSAL";
 
 const customerComplaintFields = {
   id: true,
@@ -82,6 +86,61 @@ function reviewAuditFields(row: Awaited<ReturnType<typeof requireComplaint>>) {
   };
 }
 
+async function settleNonDeliveryComplaint(
+  tx: Prisma.TransactionClient,
+  request: FastifyRequest,
+  id: string,
+) {
+  const complaint = await requireComplaint(tx, id);
+  const order = await lockComplaintOrder(tx, complaint.orderId);
+  const before = await requireComplaint(tx, id);
+  if (!before.nonDeliveryVerifiedAt || order.status !== "DELIVERED") {
+    throw new ApiError(409, "CONFLICT");
+  }
+  if (before.status === "RESOLVED") return before;
+  if (before.status !== "IN_PROGRESS") throw new ApiError(409, "CONFLICT");
+
+  const adjustment = await tx.ledgerEntry.findFirst({
+    where: {
+      orderId: order.id,
+      type: "ADJUSTMENT",
+      reference: reversalReference,
+    },
+    select: { id: true },
+  });
+  let ledgerEntryId = adjustment?.id;
+  if (ledgerEntryId === undefined) {
+    const commission = await tx.ledgerEntry.findFirst({
+      where: { orderId: order.id, type: "COMMISSION_ACCRUED" },
+      select: { restaurantId: true, amountMinor: true },
+    });
+    if (!commission) throw new ApiError(409, "CONFLICT");
+    const entry = await appendAdminLedgerEntry(tx, request, {
+      restaurantId: commission.restaurantId,
+      orderId: order.id,
+      type: "ADJUSTMENT",
+      amountMinor: -commission.amountMinor,
+      reference: reversalReference,
+      reason: messages.finance.nonDeliveryReversal,
+    });
+    ledgerEntryId = entry.id;
+  }
+
+  const after = await tx.complaint.update({
+    where: { id },
+    data: { status: "RESOLVED" },
+    select: adminComplaintFields,
+  });
+  await writeAdminAudit(tx, request, {
+    action: "COMPLAINT_RESOLVE_NON_DELIVERY",
+    entityType: "Complaint",
+    entityId: id,
+    before: reviewAuditFields(before),
+    after: { ...reviewAuditFields(after), ledgerEntryId },
+  });
+  return after;
+}
+
 export function registerComplaintRoutes(
   api: FastifyInstance,
   { db, now }: { db: PrismaClient; now: () => Date },
@@ -135,6 +194,18 @@ export function registerComplaintRoutes(
     const { id } = complaintParamsSchema.parse(request.params);
     return requireComplaint(db, id);
   });
+
+  api.post(
+    "/admin/complaints/:id/resolve-non-delivery",
+    { preHandler: requireAdminRole("SUPER_ADMIN") },
+    (request) => {
+      const { id } = complaintParamsSchema.parse(request.params);
+      resolveNonDeliveryComplaintSchema.parse(request.body);
+      return db.$transaction((tx) =>
+        settleNonDeliveryComplaint(tx, request, id),
+      );
+    },
+  );
 
   api.patch("/admin/complaints/:id", complaintReviewers, (request) => {
     const { id } = complaintParamsSchema.parse(request.params);

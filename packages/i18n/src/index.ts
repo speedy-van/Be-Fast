@@ -8,6 +8,9 @@ export const messages = {
     copySuffix: " (نسخة)",
     regularSize: "عادي",
   },
+  finance: {
+    nonDeliveryReversal: "عكس عمولة طلب ثبت عدم استلامه.",
+  },
   errors: {
     accountUnavailable: "الحساب غير متاح.",
     belowMinimum: "قيمة الطعام أقل من الحد الأدنى للطلب.",
