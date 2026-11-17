@@ -4,6 +4,7 @@ import {
   forbiddenResponse,
   forwardResponse,
   isSameOrigin,
+  proxyClientHeaders,
   unauthenticatedResponse,
   validationResponse,
 } from "../../../../lib/backend";
@@ -31,6 +32,7 @@ async function proxy(request: NextRequest, { params }: Context) {
       body,
       headers: {
         ...bearer(access),
+        ...proxyClientHeaders(request),
         ...(body ? { "content-type": "application/json" } : {}),
       },
     }),

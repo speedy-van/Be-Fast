@@ -1,6 +1,10 @@
 import { createHmac } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
-import Fastify, { LogController, type FastifyServerOptions } from "fastify";
+import Fastify, {
+  LogController,
+  type FastifyServerOptions,
+  type RouteOptions,
+} from "fastify";
 import { Pool } from "pg";
 import { registerAdminAuditRoutes } from "./admin/audit-routes.js";
 import { registerAdminCustomerRoutes } from "./admin/customer-routes.js";
@@ -22,7 +26,7 @@ import { registerBrowseDetailRoutes } from "./browse/detail-routes.js";
 import { registerBrowseListRoutes } from "./browse/list-routes.js";
 import { registerCustomerAccountRoutes } from "./customer/account-routes.js";
 import { registerCustomerAddressRoutes } from "./customer/address-routes.js";
-import { ApiError, registerErrorHandlers } from "./errors.js";
+import { ApiError, handleApiError, registerErrorHandlers } from "./errors.js";
 import { registerFinanceLedgerRoutes } from "./finance/ledger-routes.js";
 import { registerOrderMetricsRoutes } from "./finance/order-metrics-routes.js";
 import { registerRestaurantReportRoutes } from "./finance/restaurant-report-routes.js";
@@ -47,8 +51,10 @@ import type { StorageProvider } from "./storage/provider.js";
 export interface ApiOptions {
   databaseSchema?: string;
   logger?: FastifyServerOptions["logger"];
+  trustLocalProxy?: boolean;
   storage?: StorageProvider;
   onQuery?: (query: string) => void;
+  onRoute?: (route: Pick<RouteOptions, "method" | "url">) => void;
   push?: PushProvider;
   orderJobs?: boolean;
   auth?: {
@@ -91,8 +97,11 @@ export function createDatabaseClient(
 export function createApi(databaseUrl: string, options: ApiOptions = {}) {
   const api = Fastify({
     logger: options.logger,
+    trustProxy: options.trustLocalProxy ? "loopback" : false,
+    frameworkErrors: handleApiError,
     logController: new LogController({ disableRequestLogging: true }),
   });
+  if (options.onRoute) api.addHook("onRoute", options.onRoute);
   registerErrorHandlers(api);
 
   const pool = new Pool({

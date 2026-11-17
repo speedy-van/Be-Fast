@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { messages } from "@be-fast/i18n";
 
 const localApiOrigin = "http://127.0.0.1:3001";
@@ -28,6 +29,13 @@ export function isSameOrigin(request: Request) {
     origin.host === request.headers.get("host") &&
     (fetchSite === null || fetchSite === "same-origin")
   );
+}
+
+export function proxyClientHeaders(request: Request): Record<string, string> {
+  const address = request.headers.get("x-forwarded-for")?.trim();
+  if (process.env.ADMIN_TRUST_LOCAL_PROXY === "1" && address && isIP(address))
+    return { "x-forwarded-for": address };
+  return {};
 }
 
 export async function backendFetch(path: string, init: RequestInit = {}) {

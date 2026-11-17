@@ -1,9 +1,29 @@
 import { Writable } from "node:stream";
 import { authTokensSchema, errorEnvelopeSchema } from "@be-fast/contracts";
+import { messages } from "@be-fast/i18n";
 import { expect, it } from "vitest";
 import { openAuthTest } from "./auth-test-support.js";
 
 const testTimeoutMs = 20_000;
+
+it("normalizes route parameters rejected before a handler runs", async () => {
+  const { api } = openAuthTest();
+  try {
+    const response = await api.inject({
+      url: `/public/restaurants/${"a".repeat(150)}`,
+    });
+    expect(response.statusCode).toBe(414);
+    expect(response.json()).toEqual({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: messages.errors.validationError,
+        details: {},
+      },
+    });
+  } finally {
+    await api.close();
+  }
+});
 
 it(
   "keeps full phones, passwords and login tokens out of application logs",
@@ -135,6 +155,31 @@ it(
           })
         ).statusCode,
       ).toBe(200);
+    } finally {
+      await api.close();
+    }
+  },
+  testTimeoutMs,
+);
+
+it(
+  "keeps client rate budgets separate behind the configured local proxy",
+  async () => {
+    const { api } = openAuthTest({ trustLocalProxy: true });
+    const login = (forwarded: string) =>
+      api.inject({
+        method: "POST",
+        url: "/auth/admin/login",
+        remoteAddress: "127.0.0.1",
+        headers: { "x-forwarded-for": forwarded },
+        payload: {},
+      });
+    try {
+      for (let attempt = 0; attempt < 10; attempt++) {
+        expect((await login("192.0.2.31")).statusCode).toBe(400);
+      }
+      expect((await login("192.0.2.31")).statusCode).toBe(429);
+      expect((await login("192.0.2.32")).statusCode).toBe(400);
     } finally {
       await api.close();
     }

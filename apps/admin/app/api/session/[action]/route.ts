@@ -6,6 +6,7 @@ import {
   forbiddenResponse,
   forwardResponse,
   isSameOrigin,
+  proxyClientHeaders,
   responseError,
   validationResponse,
 } from "../../../../lib/backend";
@@ -29,10 +30,13 @@ export async function POST(
       await request.json().catch(() => undefined),
     );
     if (!input.success) return validationResponse();
-    const response = await backendFetch(
-      "/auth/admin/login",
-      authJson(input.data),
-    );
+    const response = await backendFetch("/auth/admin/login", {
+      ...authJson(input.data),
+      headers: {
+        "content-type": "application/json",
+        ...proxyClientHeaders(request),
+      },
+    });
     if (!response.ok) return forwardResponse(response);
     return sessionCookies(
       request,

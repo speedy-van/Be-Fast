@@ -14,6 +14,7 @@ export function openAuthTest(
     storage?: ApiOptions["storage"];
     onQuery?: ApiOptions["onQuery"];
     push?: ApiOptions["push"];
+    trustLocalProxy?: ApiOptions["trustLocalProxy"];
   } = {},
 ) {
   const test = inject("testDatabase");
@@ -29,6 +30,7 @@ export function openAuthTest(
     storage: options.storage,
     onQuery: options.onQuery,
     push: options.push,
+    trustLocalProxy: options.trustLocalProxy,
     auth: {
       secret,
       now,
