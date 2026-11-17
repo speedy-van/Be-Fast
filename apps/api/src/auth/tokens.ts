@@ -98,9 +98,14 @@ async function findActivePrincipal(
   if (aud === "restaurant") {
     const user = await db.restaurantUser.findUnique({
       where: { id: sub },
-      select: { isActive: true, restaurantId: true, role: true },
+      select: {
+        isActive: true,
+        passwordChangeRequired: true,
+        restaurantId: true,
+        role: true,
+      },
     });
-    if (user?.isActive) {
+    if (user?.isActive && !user.passwordChangeRequired) {
       return { aud, sub, restaurantId: user.restaurantId, role: user.role };
     }
   }

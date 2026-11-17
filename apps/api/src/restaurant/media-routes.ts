@@ -3,6 +3,7 @@ import multipart from "@fastify/multipart";
 import {
   adminDocumentPathSchema,
   documentIdPathSchema,
+  menuItemIdSchema,
   publicImagePathSchema,
   restaurantDocumentPathSchema,
   restaurantImagePathSchema,
@@ -16,6 +17,7 @@ import {
 } from "../auth/access.js";
 import { ApiError } from "../errors.js";
 import type { PrismaClient } from "../generated/prisma/client.ts";
+import { lockMenu, menuEditors, menuItemScope } from "../menu/shared.js";
 import {
   createImageVariants,
   ImageInputError,
@@ -67,6 +69,37 @@ async function prepareImage<T>(transform: () => Promise<T>): Promise<T> {
   }
 }
 
+async function saveRestaurantImage(
+  request: FastifyRequest,
+  storage: StorageProvider,
+  restaurantId: string,
+  saveKey: (key: string) => Promise<unknown>,
+) {
+  const bytes = await readImage(request);
+  const variants = await prepareImage(() => createImageVariants(bytes));
+  const assetId = randomUUID();
+  const key = `restaurants/${restaurantId}/${assetId}`;
+  const storedKeys = variants.map(({ width }) => `${key}/${width}.webp`);
+  try {
+    for (const variant of variants) {
+      await storage.put(
+        `${key}/${variant.width}.webp`,
+        variant.bytes,
+        variant.contentType,
+      );
+    }
+    await saveKey(key);
+  } catch (error) {
+    await Promise.allSettled(
+      storedKeys.map((storedKey) => storage.delete(storedKey)),
+    );
+    throw error;
+  }
+
+  const path = `/public/images/${restaurantId}/${assetId}`;
+  return { key, images: { 320: `${path}/320`, 640: `${path}/640` } };
+}
+
 function privateDocumentPath(restaurantId: string, documentId: string) {
   return `/admin/restaurants/${restaurantId}/documents/${documentId}`;
 }
@@ -98,38 +131,46 @@ export function registerMediaRoutes(
     async (request, reply) => {
       const { restaurantId } = requireRestaurant(request);
       const { kind } = restaurantImagePathSchema.parse(request.params);
-      const bytes = await readImage(request);
-      const variants = await prepareImage(() => createImageVariants(bytes));
-      const assetId = randomUUID();
-      const key = `restaurants/${restaurantId}/${assetId}`;
-      const storedKeys = variants.map(({ width }) => `${key}/${width}.webp`);
-      try {
-        for (const variant of variants) {
-          await storage.put(
-            `${key}/${variant.width}.webp`,
-            variant.bytes,
-            variant.contentType,
-          );
-        }
-        await db.restaurant.update({
-          where: { id: restaurantId },
-          data: kind === "logo" ? { logoKey: key } : { coverImageKey: key },
-          select: { id: true },
-        });
-      } catch (error) {
-        await Promise.allSettled(
-          storedKeys.map((storedKey) => storage.delete(storedKey)),
-        );
-        throw error;
-      }
+      const image = await saveRestaurantImage(
+        request,
+        storage,
+        restaurantId,
+        (key) =>
+          db.restaurant.update({
+            where: { id: restaurantId },
+            data: kind === "logo" ? { logoKey: key } : { coverImageKey: key },
+            select: { id: true },
+          }),
+      );
+      return reply.code(201).send(image);
+    },
+  );
 
-      const publicPath = `/public/images/${restaurantId}/${assetId}`;
-      return reply
-        .code(201)
-        .send({
-          key,
-          images: { 320: `${publicPath}/320`, 640: `${publicPath}/640` },
-        });
+  api.post(
+    "/restaurant/menu/items/:itemId/image",
+    menuEditors,
+    async (request, reply) => {
+      const { restaurantId } = requireRestaurant(request);
+      const { itemId } = menuItemIdSchema.parse(request.params);
+      const where = { id: itemId, ...menuItemScope(restaurantId) };
+      if (!(await db.menuItem.findFirst({ where, select: { id: true } }))) {
+        throw new ApiError(404, "NOT_FOUND");
+      }
+      const image = await saveRestaurantImage(
+        request,
+        storage,
+        restaurantId,
+        (key) =>
+          db.$transaction(async (tx) => {
+            await lockMenu(tx, restaurantId);
+            const result = await tx.menuItem.updateMany({
+              where,
+              data: { imageKey: key },
+            });
+            if (!result.count) throw new ApiError(404, "NOT_FOUND");
+          }),
+      );
+      return reply.code(201).send(image);
     },
   );
 
@@ -144,7 +185,18 @@ export function registerMediaRoutes(
         where: {
           id: restaurantId,
           status: "APPROVED",
-          OR: [{ logoKey: key }, { coverImageKey: key }],
+          OR: [
+            { logoKey: key },
+            { coverImageKey: key },
+            {
+              menuSections: {
+                some: {
+                  deletedAt: null,
+                  items: { some: { imageKey: key, deletedAt: null } },
+                },
+              },
+            },
+          ],
         },
         select: { id: true },
       });

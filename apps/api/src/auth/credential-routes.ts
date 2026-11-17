@@ -96,7 +96,9 @@ export function registerCredentialRoutes(
   });
 
   api.post("/auth/restaurant/login", async (request, reply) => {
-    const { phone, password } = restaurantLoginSchema.parse(request.body);
+    const { phone, password, newPassword } = restaurantLoginSchema.parse(
+      request.body,
+    );
     const user = await db.restaurantUser.findUnique({
       where: { phone },
       select: {
@@ -105,18 +107,56 @@ export function registerCredentialRoutes(
         role: true,
         passwordHash: true,
         isActive: true,
+        passwordChangeRequired: true,
       },
     });
     const validPassword = await verifyPassword(password, user?.passwordHash);
     if (!user?.isActive || !validPassword)
       throw new ApiError(401, "INVALID_CREDENTIALS");
 
-    const result = await tokens.issue({
-      aud: "restaurant",
-      sub: user.id,
-      restaurantId: user.restaurantId,
-      role: user.role,
-    });
+    const issueRestaurantSession = (
+      account: { id: string; restaurantId: string; role: typeof user.role },
+      tx?: Prisma.TransactionClient,
+    ) =>
+      tokens.issue(
+        {
+          aud: "restaurant",
+          sub: account.id,
+          restaurantId: account.restaurantId,
+          role: account.role,
+        },
+        tx,
+      );
+
+    if (user.passwordChangeRequired) {
+      if (newPassword === undefined)
+        throw new ApiError(403, "PASSWORD_CHANGE_REQUIRED");
+      if (Buffer.from(newPassword).equals(Buffer.from(password)))
+        throw new ApiError(400, "VALIDATION_ERROR");
+
+      const passwordHash = await hashPassword(newPassword);
+      const result = await db.$transaction(async (tx) => {
+        const [account] = await tx.restaurantUser.updateManyAndReturn({
+          where: {
+            id: user.id,
+            restaurantId: user.restaurantId,
+            isActive: true,
+            passwordChangeRequired: true,
+            passwordHash: user.passwordHash,
+          },
+          data: { passwordHash, passwordChangeRequired: false },
+          select: { id: true, restaurantId: true, role: true },
+        });
+        if (!account) return null;
+
+        return issueRestaurantSession(account, tx);
+      });
+      if (result === null) throw new ApiError(401, "INVALID_CREDENTIALS");
+      return reply.header("Cache-Control", "no-store").send(result);
+    }
+
+    if (newPassword !== undefined) throw new ApiError(400, "VALIDATION_ERROR");
+    const result = await issueRestaurantSession(user);
     return reply.header("Cache-Control", "no-store").send(result);
   });
 

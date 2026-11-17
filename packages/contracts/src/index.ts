@@ -1,7 +1,11 @@
 export * from "./auth.js";
 export * from "./geo.js";
 export * from "./media.js";
+export * from "./menu-actions.js";
+export * from "./menu-catalog.js";
+export * from "./menu-options.js";
 export * from "./restaurant.js";
+export * from "./staff.js";
 
 import { z } from "zod";
 
@@ -16,6 +20,7 @@ export const errorCodes = [
   "INVALID_REFRESH_TOKEN",
   "NOT_FOUND",
   "OTP_UNAVAILABLE",
+  "PASSWORD_CHANGE_REQUIRED",
   "RATE_LIMITED",
   "UNAUTHENTICATED",
   "VALIDATION_ERROR",

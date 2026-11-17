@@ -16,6 +16,7 @@ export const syrianPhoneSchema = z.string().transform((input, context) => {
 export const adminEmailSchema = z.string().trim().toLowerCase().pipe(z.email());
 
 const sixDigitCodeSchema = z.string().regex(/^[0-9]{6}$/u);
+export const newPasswordSchema = z.string().min(8);
 
 export const customerOtpRequestSchema = z.object({ phone: syrianPhoneSchema });
 export const customerOtpVerifySchema = customerOtpRequestSchema.extend({
@@ -23,12 +24,13 @@ export const customerOtpVerifySchema = customerOtpRequestSchema.extend({
 });
 
 export const restaurantRegisterSchema = customerOtpVerifySchema.extend({
-  password: z.string().min(8),
+  password: newPasswordSchema,
 });
 
 export const restaurantLoginSchema = z.object({
   phone: syrianPhoneSchema,
   password: z.string().min(1),
+  newPassword: newPasswordSchema.optional(),
 });
 
 export const adminLoginSchema = z.object({

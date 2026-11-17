@@ -14,6 +14,7 @@ const errorMessages = {
   INVALID_REFRESH_TOKEN: messages.errors.invalidRefreshToken,
   NOT_FOUND: messages.errors.pageNotFound,
   OTP_UNAVAILABLE: messages.errors.otpUnavailable,
+  PASSWORD_CHANGE_REQUIRED: messages.errors.passwordChangeRequired,
   RATE_LIMITED: messages.errors.rateLimited,
   UNAUTHENTICATED: messages.errors.unauthenticated,
   VALIDATION_ERROR: messages.errors.validationError,

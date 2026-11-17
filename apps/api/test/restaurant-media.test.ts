@@ -299,3 +299,52 @@ it(
   },
   testTimeoutMs,
 );
+
+it(
+  "only serves an approved restaurant's live menu item images",
+  async () => {
+    const { api, db, owner, close } = await mediaTest();
+    try {
+      const own = await owner("+963900420005");
+      const other = await owner("+963900420006");
+      const section = await db.menuSection.create({
+        data: { restaurantId: own.restaurantId, name: "Dishes" },
+      });
+      const item = await db.menuItem.create({
+        data: { sectionId: section.id, name: "Dish" },
+      });
+      const { payload, headers } = multipartImage(await pngFixture());
+      const send = (authorization: string) =>
+        api.inject({
+          method: "POST",
+          url: `/restaurant/menu/items/${item.id}/image`,
+          payload,
+          headers: { ...headers, authorization },
+        });
+      expect((await send(other.authorization)).statusCode).toBe(404);
+      const response = await send(own.authorization);
+      expect(response.statusCode).toBe(201);
+      const { key, images } = restaurantImageUploadSchema.parse(
+        response.json(),
+      );
+      expect(
+        (await db.menuItem.findUniqueOrThrow({ where: { id: item.id } }))
+          .imageKey,
+      ).toBe(key);
+      expect((await api.inject({ url: images[640] })).statusCode).toBe(404);
+      await db.restaurant.update({
+        where: { id: own.restaurantId },
+        data: { status: "APPROVED" },
+      });
+      expect((await api.inject({ url: images[640] })).statusCode).toBe(200);
+      await db.menuItem.update({
+        where: { id: item.id },
+        data: { deletedAt: new Date() },
+      });
+      expect((await api.inject({ url: images[640] })).statusCode).toBe(404);
+    } finally {
+      await close();
+    }
+  },
+  testTimeoutMs,
+);

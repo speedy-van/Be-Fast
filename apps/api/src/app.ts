@@ -16,8 +16,12 @@ import { createTokenService } from "./auth/tokens.js";
 import { ApiError, registerErrorHandlers } from "./errors.js";
 import { PrismaClient } from "./generated/prisma/client.ts";
 import { registerGeoRoutes } from "./geo/routes.js";
+import { registerMenuActionRoutes } from "./menu/action-routes.js";
+import { registerMenuCatalogRoutes } from "./menu/catalog-routes.js";
+import { registerMenuOptionRoutes } from "./menu/option-routes.js";
 import { registerMediaRoutes } from "./restaurant/media-routes.js";
 import { registerRestaurantRoutes } from "./restaurant/profile-routes.js";
+import { registerStaffRoutes } from "./restaurant/staff-routes.js";
 import { createLocalStorage } from "./storage-config.js";
 import type { StorageProvider } from "./storage/provider.js";
 
@@ -109,6 +113,10 @@ export function createApi(databaseUrl: string, options: ApiOptions = {}) {
     registerTokenRoutes(api, { tokens });
     registerGeoRoutes(api, { db });
     registerRestaurantRoutes(api, { db });
+    registerMenuCatalogRoutes(api, { db });
+    registerMenuOptionRoutes(api, { db });
+    registerMenuActionRoutes(api, { db });
+    registerStaffRoutes(api, { db });
     registerMediaRoutes(api, {
       db,
       now,
