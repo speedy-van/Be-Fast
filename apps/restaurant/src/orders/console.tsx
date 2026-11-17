@@ -28,6 +28,11 @@ import {
 } from "./view";
 
 type Tab = keyof typeof text.tabs;
+export interface OrderConnection {
+  offline: boolean;
+  lastUpdatedAt?: string;
+}
+
 const tabs: readonly Tab[] = [
   "new",
   "preparing",
@@ -137,6 +142,8 @@ export function OrderConsole({
   acceptingOrders,
   foreground,
   connected,
+  visible = true,
+  onConnectionChange,
   request,
   alert,
 }: {
@@ -147,6 +154,8 @@ export function OrderConsole({
   acceptingOrders: boolean;
   foreground: boolean;
   connected: boolean;
+  visible?: boolean;
+  onConnectionChange?: (connection: OrderConnection) => void;
   request: RestaurantRequest;
   alert?: ReactNode;
 }) {
@@ -157,13 +166,14 @@ export function OrderConsole({
   const [pauseFailed, setPauseFailed] = useState(false);
   const [pauseSaving, setPauseSaving] = useState(false);
   const pauseInFlight = useRef(false);
-  const serverNow = useServerClock(foreground, serverOffsetMs);
-  const canRead = foreground && connected;
+  const serverNow = useServerClock(foreground && visible, serverOffsetMs);
+  const canReadDetails = foreground && connected && visible;
   const active = useOrderPolling(
     "/restaurant/orders/active",
     orderListResponseSchema,
     request,
-    canRead,
+    foreground,
+    !connected,
   );
   const completedPath =
     tab === "completed"
@@ -173,15 +183,22 @@ export function OrderConsole({
     completedPath,
     orderListResponseSchema,
     request,
-    canRead,
+    canReadDetails,
   );
   const detail = useOrderPolling(
     opened ? `/restaurant/orders/${opened.id}` : null,
     orderReadSchema,
     request,
-    canRead,
+    canReadDetails,
   );
   const isOffline = !connected || active.failed;
+  const lastUpdatedAt =
+    active.receivedAt === undefined
+      ? undefined
+      : new Date(active.receivedAt + serverOffsetMs).toISOString();
+  useEffect(() => {
+    onConnectionChange?.({ offline: isOffline, lastUpdatedAt });
+  }, [isOffline, lastUpdatedAt, onConnectionChange]);
   const isAccepting = branchUpdate ?? acceptingOrders;
   const activeOrders = active.data?.orders ?? [];
   const tabResource = tab === "completed" ? completed : active;
@@ -238,114 +255,122 @@ export function OrderConsole({
     }
   }
 
+  const audibleAlert = foreground && connected && hasUnseen && alert;
   return (
-    <View style={styles.screen}>
-      {foreground && connected && hasUnseen && alert}
-      <View style={styles.toolbar}>
-        <Text accessibilityRole="header" style={styles.title}>
-          {text.title}
-        </Text>
-        {role !== "KITCHEN" && (
-          <View style={styles.panel}>
-            <View style={styles.spread}>
-              <View>
-                <Text style={styles.text}>{text.pause}</Text>
-                <Text style={styles.muted}>
-                  {isAccepting ? text.receiving : text.paused}
-                </Text>
+    <>
+      {audibleAlert}
+      {visible && (
+        <View style={styles.screen}>
+          <View style={styles.toolbar}>
+            <Text accessibilityRole="header" style={styles.title}>
+              {text.title}
+            </Text>
+            {role !== "KITCHEN" && (
+              <View style={styles.panel}>
+                <View style={styles.spread}>
+                  <View>
+                    <Text style={styles.text}>{text.pause}</Text>
+                    <Text style={styles.muted}>
+                      {isAccepting ? text.receiving : text.paused}
+                    </Text>
+                  </View>
+                  <View style={styles.switch}>
+                    <Switch
+                      testID="accepting-orders-switch"
+                      accessibilityLabel={text.pause}
+                      value={!isAccepting}
+                      disabled={pauseSaving || isOffline}
+                      onValueChange={(value) => {
+                        void updatePause(value);
+                      }}
+                    />
+                  </View>
+                </View>
+                {pauseFailed && (
+                  <Text accessibilityRole="alert" style={styles.error}>
+                    {text.requestError}
+                  </Text>
+                )}
               </View>
-              <View style={styles.switch}>
-                <Switch
-                  testID="accepting-orders-switch"
-                  accessibilityLabel={text.pause}
-                  value={!isAccepting}
-                  disabled={pauseSaving || isOffline}
-                  onValueChange={(value) => {
-                    void updatePause(value);
-                  }}
-                />
+            )}
+            {!selected && (
+              <View style={styles.row}>
+                {tabs.map((name) => (
+                  <OrderButton
+                    key={name}
+                    label={text.tabs[name]}
+                    selected={tab === name}
+                    onPress={() => setTab(name)}
+                  />
+                ))}
               </View>
-            </View>
-            {pauseFailed && (
-              <Text accessibilityRole="alert" style={styles.error}>
-                {text.requestError}
-              </Text>
             )}
           </View>
-        )}
-        {!selected && (
-          <View style={styles.row}>
-            {tabs.map((name) => (
-              <OrderButton
-                key={name}
-                label={text.tabs[name]}
-                selected={tab === name}
-                onPress={() => setTab(name)}
-              />
-            ))}
-          </View>
-        )}
-      </View>
-      {isOffline && (
-        <View
-          accessibilityLiveRegion="polite"
-          testID="orders-offline"
-          style={styles.banner}
-        >
-          <Text style={styles.error}>{text.offline}</Text>
-          <Text style={styles.text}>
-            {active.receivedAt === undefined
-              ? text.noUpdate
-              : `${text.lastUpdated} ${formatDamascusDateTime(new Date(active.receivedAt + serverOffsetMs).toISOString())}`}
-          </Text>
-          <OrderButton label={text.retry} onPress={active.refresh} />
-        </View>
-      )}
-      {selected ? (
-        <OrderDetail
-          key={selected.id}
-          order={selected}
-          role={role}
-          mode={mode}
-          isOffline={isOffline}
-          serverNow={serverNow}
-          expireAfterSec={expireAfterSec}
-          onClose={() => setOpened(null)}
-          onTransition={transition}
-        />
-      ) : (
-        <FlatList
-          contentContainerStyle={styles.content}
-          data={tabOrders}
-          keyExtractor={(order) => order.id}
-          renderItem={({ item }) => (
-            <OrderRow
-              order={item}
+          {isOffline && (
+            <View
+              accessibilityLiveRegion="polite"
+              testID="orders-offline"
+              style={styles.banner}
+            >
+              <Text style={styles.error}>{text.offline}</Text>
+              <Text style={styles.text}>
+                {lastUpdatedAt === undefined
+                  ? text.noUpdate
+                  : `${text.lastUpdated} ${formatDamascusDateTime(lastUpdatedAt)}`}
+              </Text>
+              <OrderButton label={text.retry} onPress={active.refresh} />
+            </View>
+          )}
+          {selected ? (
+            <OrderDetail
+              key={selected.id}
+              order={selected}
               role={role}
               mode={mode}
+              isOffline={isOffline}
               serverNow={serverNow}
               expireAfterSec={expireAfterSec}
-              unseen={item.status === "PENDING" && !viewed.has(item.id)}
-              onOpen={() => open(item)}
+              onClose={() => setOpened(null)}
+              onTransition={transition}
+            />
+          ) : (
+            <FlatList
+              contentContainerStyle={styles.content}
+              data={tabOrders}
+              keyExtractor={(order) => order.id}
+              renderItem={({ item }) => (
+                <OrderRow
+                  order={item}
+                  role={role}
+                  mode={mode}
+                  serverNow={serverNow}
+                  expireAfterSec={expireAfterSec}
+                  unseen={item.status === "PENDING" && !viewed.has(item.id)}
+                  onOpen={() => open(item)}
+                />
+              )}
+              ListEmptyComponent={
+                <Text style={styles.muted}>
+                  {tabResource.loading ? text.loading : text.empty}
+                </Text>
+              }
+              ListHeaderComponent={
+                tabResource.failed && tab === "completed" ? (
+                  <View style={styles.banner}>
+                    <Text style={styles.error}>
+                      {tabResource.data ? text.stale : text.requestError}
+                    </Text>
+                    <OrderButton
+                      label={text.retry}
+                      onPress={completed.refresh}
+                    />
+                  </View>
+                ) : undefined
+              }
             />
           )}
-          ListEmptyComponent={
-            <Text style={styles.muted}>
-              {tabResource.loading ? text.loading : text.empty}
-            </Text>
-          }
-          ListHeaderComponent={
-            tabResource.failed && tab === "completed" ? (
-              <View style={styles.banner}>
-                <Text style={styles.error}>
-                  {tabResource.data ? text.stale : text.requestError}
-                </Text>
-                <OrderButton label={text.retry} onPress={completed.refresh} />
-              </View>
-            ) : null
-          }
-        />
+        </View>
       )}
-    </View>
+    </>
   );
 }

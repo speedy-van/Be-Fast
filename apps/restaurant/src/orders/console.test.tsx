@@ -182,7 +182,7 @@ it("renders exactly the transitions from the shared state machine for every stat
         });
         const actions = tree.root.findAll(
           ({ type, props }) =>
-            type === "Pressable" &&
+            typeof type === "string" &&
             typeof props.testID === "string" &&
             props.testID.startsWith("transition-"),
         );
@@ -340,4 +340,70 @@ it("pulls immediately on foreground and reconnect and rings only until the pendi
   expect(
     responseCountdown(createdAt, 480, Date.parse(createdAt) + 60_000),
   ).toBe("7:00");
+});
+
+it("continues pulling and ringing on another tab without keeping the orders screen visible", async () => {
+  vi.useFakeTimers();
+  const fixture = restaurantMock(() => ({ orders: [pending] }));
+  const alert = createElement("SoundFixture", { testID: "new-order-sound" });
+  const tree = await mount(
+    <OrderConsole
+      {...consoleProps}
+      request={fixture.request}
+      visible={false}
+      alert={alert}
+    />,
+  );
+  expect(hostById(tree, `order-row-${pending.id}`)).toHaveLength(0);
+  expect(hostById(tree, "new-order-sound")).toHaveLength(1);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10_000);
+  });
+  expect(fixture.calls.mock.calls.map(([path]) => path)).toEqual([
+    "/restaurant/orders/active",
+    "/restaurant/orders/active",
+  ]);
+});
+
+it("keeps the disconnection banner until the active pull succeeds after native reconnect", async () => {
+  let release:
+    ((response: { orders: OrderReadResponse[] }) => void) | undefined;
+  const deferred = new Promise<{ orders: OrderReadResponse[] }>((resolve) => {
+    release = resolve;
+  });
+  const fixture = restaurantMock(() => deferred);
+  const connection = vi.fn();
+  const tree = await mount(
+    <OrderConsole
+      {...consoleProps}
+      connected={false}
+      onConnectionChange={connection}
+      request={fixture.request}
+    />,
+  );
+  expect(hostById(tree, "orders-offline")).toHaveLength(1);
+  expect(fixture.calls).not.toHaveBeenCalled();
+  await act(async () => {
+    tree.update(
+      <OrderConsole
+        {...consoleProps}
+        onConnectionChange={connection}
+        request={fixture.request}
+      />,
+    );
+  });
+  expect(fixture.calls).toHaveBeenCalledTimes(1);
+  expect(hostById(tree, "orders-offline")).toHaveLength(1);
+  expect(connection).toHaveBeenLastCalledWith({
+    offline: true,
+    lastUpdatedAt: undefined,
+  });
+  await act(async () => {
+    release?.({ orders: [pending] });
+  });
+  expect(hostById(tree, "orders-offline")).toHaveLength(0);
+  expect(connection).toHaveBeenLastCalledWith({
+    offline: false,
+    lastUpdatedAt: expect.any(String),
+  });
 });

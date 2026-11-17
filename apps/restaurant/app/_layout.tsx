@@ -1,5 +1,8 @@
 import { Stack } from "expo-router";
-import { IBMPlexSansArabic_400Regular, IBMPlexSansArabic_700Bold } from "@expo-google-fonts/ibm-plex-sans-arabic";
+import {
+  IBMPlexSansArabic_400Regular,
+  IBMPlexSansArabic_700Bold,
+} from "@expo-google-fonts/ibm-plex-sans-arabic";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { RestaurantSessionProvider } from "../src/session";

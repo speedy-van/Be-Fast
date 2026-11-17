@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { priceMinorFromInput } from "./amount-input";
 import {
   initializeMenuDraft,
   mayEditMenu,
   prepareMenuSave,
-  priceMinorFromInput,
   type MenuTarget,
 } from "./menu-model";
 

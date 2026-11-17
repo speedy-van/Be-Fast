@@ -16,6 +16,7 @@ export function useOrderPolling<T>(
   schema: ResponseSchema<T>,
   request: RestaurantRequest,
   enabled: boolean,
+  disconnected = false,
 ) {
   const [read, setRead] = useState<Read<T>>();
   const [generation, setGeneration] = useState(0);
@@ -23,6 +24,14 @@ export function useOrderPolling<T>(
 
   useEffect(() => {
     if (!enabled || path === null) return;
+    if (disconnected) {
+      setRead((previous) =>
+        previous?.path === path
+          ? { ...previous, failed: true }
+          : { path, failed: true },
+      );
+      return;
+    }
     const controller = new AbortController();
     let pending = false;
     async function update(currentPath: string) {
@@ -62,7 +71,7 @@ export function useOrderPolling<T>(
       controller.abort();
       clearInterval(timer);
     };
-  }, [enabled, generation, path, request, schema]);
+  }, [disconnected, enabled, generation, path, request, schema]);
 
   const current = read?.path === path ? read : undefined;
   return {

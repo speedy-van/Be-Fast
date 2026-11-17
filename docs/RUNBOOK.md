@@ -2,7 +2,9 @@
 
 ## تطبيق المطعم على Android في التطوير
 
-هذه مسودة تشغيل. توقف التحقق قبل بناء APK. قبل اتباع الأوامر، وفّر Gradle `9.4.1` ومنصّة Android SDK ‏`android-37` وحدّث مسودة `build:android` لتستخدمهما. إصدار `9.7.0` المتاح محلياً أخفق عند تجميع ملحقات Expo وReact Native. يحتاج البناء أيضاً إلى JDK 17 وأدوات البناء `37.0.0` وNDK `27.1.12297006` وCMake `3.22.1`. عيّن `JAVA_HOME` و`ANDROID_HOME` إلى الأدوات المثبّتة. يشتمل Expo على قالب المشروع الأصلي. [توافق AGP 9.2](https://developer.android.com/build/releases/agp-9-2-0-release-notes) · [بناء Expo المحلي](https://docs.expo.dev/guides/local-app-development/)
+يحتاج البناء إلى Gradle `9.4.1` ومنصّة Android SDK ‏`37.0` (`platforms;android-37.0`) وJDK 17 وأدوات البناء `37.0.0` وNDK `27.1.12297006` وCMake `3.22.1`. عيّن `JAVA_HOME` و`ANDROID_HOME` إلى الأدوات المثبّتة. يعثر أمر البناء على Gradle في ذاكرة التوزيعات المحلية أو في `GRADLE_HOME`. يشتمل Expo على قالب المشروع الأصلي، ويخصّص الأمر ذاكرة Gradle للتطبيق داخل `apps/restaurant/.android-gradle/`. [توافق AGP 9.2](https://developer.android.com/build/releases/agp-9-2-0-release-notes) · [تثبيت Android SDK 37](https://developer.android.com/about/versions/17/setup-sdk) · [بناء Expo المحلي](https://docs.expo.dev/guides/local-app-development/)
+
+ثبّت المنصّة عبر SDK Manager في Android Studio لتسجيل الحزمة محلياً في `package.xml`. يستخدم Gradle هذا الملف للتعرّف على المنصّة.
 
 من جذر المستودع على Windows، ثبّت اعتماداته وابنِ حزم مساحة العمل. شغّل خادم التطوير في طرفية منفصلة على المنفذ `3001` بعد تجهيز متغيرات `.env` المحلية.
 

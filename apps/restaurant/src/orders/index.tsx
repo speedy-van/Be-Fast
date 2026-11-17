@@ -12,7 +12,9 @@ import {
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { useRestaurantSession } from "../session";
-import { OrderConsole } from "./console";
+import { OrderConsole, type OrderConnection } from "./console";
+
+export type { OrderConnection } from "./console";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro registers the static sound as a native asset.
 const ringingSound = require("./assets/new-order.wav") as AudioSource;
@@ -37,7 +39,13 @@ function isConnected(state: NetworkState) {
   return state.isInternetReachable ?? state.isConnected ?? true;
 }
 
-export function RestaurantOrders() {
+export function RestaurantOrders({
+  visible = true,
+  onConnectionChange,
+}: {
+  visible?: boolean;
+  onConnectionChange?: (connection: OrderConnection) => void;
+}) {
   const session = useRestaurantSession();
   const [foreground, setForeground] = useState(
     () => AppState.currentState === null || AppState.currentState === "active",
@@ -71,7 +79,7 @@ export function RestaurantOrders() {
 
   return (
     <>
-      {foreground && <WakeOrdersScreen />}
+      {foreground && visible && <WakeOrdersScreen />}
       <OrderConsole
         key={session.restaurantId}
         role={session.role}
@@ -81,6 +89,8 @@ export function RestaurantOrders() {
         acceptingOrders={session.acceptingOrders}
         foreground={foreground}
         connected={connected}
+        visible={visible}
+        onConnectionChange={onConnectionChange}
         request={session.request}
         alert={<OrderAlert />}
       />
