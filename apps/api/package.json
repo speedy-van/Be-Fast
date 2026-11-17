@@ -4,16 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "db:generate": "prisma generate",
+    "db:seed": "prisma generate && node --env-file-if-exists=../../.env prisma/seed.ts",
     "start": "node --env-file=../../.env.example --env-file-if-exists=../../.env dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "prisma generate && tsc --noEmit"
   },
   "dependencies": {
     "@be-fast/i18n": "workspace:*",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
     "fastify": "5.12.8",
     "pg": "8.23.1"
   },
   "devDependencies": {
-    "@types/pg": "8.23.1"
+    "@types/pg": "8.23.1",
+    "prisma": "7.10.1"
   }
 }

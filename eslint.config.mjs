@@ -81,6 +81,7 @@ export default defineConfig(
     "**/.expo/",
     "**/.turbo/",
     "**/coverage/",
+    "apps/api/src/generated/prisma/",
     "**/next-env.d.ts",
   ]),
   js.configs.recommended,

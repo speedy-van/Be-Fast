@@ -64,3 +64,32 @@
 - [x] `corepack pnpm db:check` — أعاد PostgreSQL 18.7 من فرعي `dev` و`test`.
 - [x] `corepack pnpm test` دون `DATABASE_URL` في بيئة العملية — نجح 13 اختباراً، منها اختبار مخطط PostgreSQL المعزول واختبارا `/health`.
 - شُغّل الأمران من جذر المستودع على جهاز المستخدم (Windows، Node `v24.22.1`).
+
+## M2 — مخطط القاعدة والبيانات الأولية
+
+الحالة: مكتملة
+
+معايير القبول:
+
+- [x] `db:migrate` ثم `db:seed` ينجحان على قاعدة فارغة والبذر آمن عند إعادة التشغيل — فحص `dev` أعاد صفر جداول ثم نجح الترحيل والبذر مرتين. أثبت `apps/api/test/seed.test.ts` ذلك آلياً على مخطط فارغ في `test` وتحقق من بيانات المرحلة ومن بقاء الإعدادات المعدّلة واعتمادات المدير بعد التشغيل الثاني.
+- [x] القاعدة ترفض قيد عمولة ثانياً للطلب نفسه — `apps/api/test/database-constraints.test.ts`.
+- [x] القاعدة ترفض تحديث صف `LedgerEntry` — `apps/api/test/database-constraints.test.ts`.
+- [x] القاعدة ترفض حذف صف `OrderStatusEvent` — `apps/api/test/database-constraints.test.ts`.
+- [x] القاعدة ترفض مفتاح تكرار مكرراً للعميل نفسه — `apps/api/test/database-constraints.test.ts`.
+- [x] القاعدة ترفض السعر السالب — `apps/api/test/database-constraints.test.ts`.
+
+نتائج الأوامر: lint ✓ · typecheck ✓ · test ✓ (145) · build ✓
+
+مكان التحقق: شُغّلت أوامر `corepack pnpm db:migrate` و`corepack pnpm db:seed`، ثم `corepack pnpm lint` و`corepack pnpm typecheck` و`corepack pnpm test` و`corepack pnpm build` من جذر المستودع على جهاز المستخدم (Windows، Node `v24.22.1`). أوامر الترحيل والبذر استعملت `dev`، واستخدمت اختبارات التكامل مخططات معزولة على `test` في PostgreSQL 18.7.
+
+قرارات اتخذتها: ترحيل Prisma مقيّد بمخطط الاختبار في تشغيل الاختبارات، وبذر بمعرّفات ثابتة، واعتمادات مدير تجريبي اختيارية عند الإدراج الأول. التفاصيل في [الأسئلة المفتوحة](OPEN_QUESTIONS.md).
+
+أسئلة مفتوحة: لا توجد أسئلة جديدة تمنع متابعة التنفيذ.
+
+### مهام المرحلة
+
+- [x] إنشاء مخطط Prisma لكل الجداول المطلوبة.
+- [x] إنشاء ترحيل يفرض الفهارس والقيود والجداول الإلحاقية في PostgreSQL.
+- [x] تجهيز بيانات التطوير الأولية الآمنة عند إعادة التشغيل.
+- [x] التحقق من القيود واختبار الترحيل والبيانات الأولية على مخطط PostgreSQL فارغ ومعزول.
+- [x] تشغيل أوامر القبول الأربعة من الجذر.

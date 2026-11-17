@@ -1,0 +1,560 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RestaurantStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum RestaurantRole {
+  OWNER
+  MANAGER
+  CASHIER
+  KITCHEN
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  OPERATIONS
+  FINANCE
+  SUPPORT
+}
+
+enum RestaurantDocumentType {
+  BUSINESS_REGISTRATION
+  LICENSE
+}
+
+enum OtpPurpose {
+  CUSTOMER_LOGIN
+  RESTAURANT_REGISTER
+}
+
+enum OrderType {
+  DELIVERY
+  PICKUP
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  REJECTED
+  EXPIRED
+  CANCELLED
+  DELIVERY_FAILED
+}
+
+enum OrderActorType {
+  CUSTOMER
+  RESTAURANT
+  ADMIN
+  SYSTEM
+}
+
+enum OrderReasonCode {
+  TOO_BUSY
+  ITEM_UNAVAILABLE
+  CLOSING_SOON
+  OUT_OF_ZONE
+  CUSTOMER_REQUEST
+  NO_DRIVER
+  DUPLICATE
+  SUSPECTED_FAKE
+  CUSTOMER_UNREACHABLE
+  WRONG_ADDRESS
+  CUSTOMER_REFUSED
+  OTHER
+}
+
+enum LedgerEntryType {
+  COMMISSION_ACCRUED
+  PAYMENT_RECEIVED
+  ADJUSTMENT
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+model Governorate {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+  cities    City[]
+}
+
+model City {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  governorateId String         @db.Uuid
+  name          String
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime       @default(now()) @updatedAt @db.Timestamptz(3)
+  governorate   Governorate    @relation(fields: [governorateId], references: [id], onDelete: Restrict)
+  neighborhoods Neighborhood[]
+}
+
+model Neighborhood {
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId        String            @db.Uuid
+  name          String
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime          @default(now()) @updatedAt @db.Timestamptz(3)
+  city          City              @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  addresses     CustomerAddress[]
+  branches      Branch[]
+  deliveryZones DeliveryZone[]
+}
+
+model FoodCategory {
+  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  icon        String?
+  sortOrder   Int                  @default(0)
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime             @default(now()) @updatedAt @db.Timestamptz(3)
+  restaurants RestaurantCategory[]
+}
+
+model Customer {
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String?
+  phone         String?           @unique
+  blockedAt     DateTime?         @db.Timestamptz(3)
+  deletedAt     DateTime?         @db.Timestamptz(3)
+  createdAt     DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime          @default(now()) @updatedAt @db.Timestamptz(3)
+  addresses     CustomerAddress[]
+  refreshTokens RefreshToken[]
+  orders        Order[]
+  complaints    Complaint[]
+}
+
+model CustomerAddress {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId     String       @db.Uuid
+  neighborhoodId String       @db.Uuid
+  street         String
+  landmark       String
+  building       String?
+  floor          String?
+  notes          String?
+  label          String?
+  latitude       Float?
+  longitude      Float?
+  isDefault      Boolean      @default(false)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @default(now()) @updatedAt @db.Timestamptz(3)
+  customer       Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  neighborhood   Neighborhood @relation(fields: [neighborhoodId], references: [id], onDelete: Restrict)
+
+  @@index([customerId])
+}
+
+model OtpChallenge {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone     String
+  purpose   OtpPurpose
+  codeHash  String
+  ip        String
+  attempts  Int        @default(0)
+  expiresAt DateTime   @db.Timestamptz(3)
+  usedAt    DateTime?  @db.Timestamptz(3)
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+
+  @@index([phone, createdAt])
+  @@index([ip, createdAt])
+}
+
+model RefreshToken {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tokenHash        String          @unique
+  familyId         String          @db.Uuid
+  customerId       String?         @db.Uuid
+  restaurantUserId String?         @db.Uuid
+  adminUserId      String?         @db.Uuid
+  expiresAt        DateTime        @db.Timestamptz(3)
+  rotatedAt        DateTime?       @db.Timestamptz(3)
+  revokedAt        DateTime?       @db.Timestamptz(3)
+  createdAt        DateTime        @default(now()) @db.Timestamptz(3)
+  customer         Customer?       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  restaurantUser   RestaurantUser? @relation(fields: [restaurantUserId], references: [id], onDelete: Restrict)
+  adminUser        AdminUser?      @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+
+  @@index([familyId])
+  @@index([customerId])
+}
+
+model Restaurant {
+  id                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String?
+  status            RestaurantStatus     @default(DRAFT)
+  contactPhone      String?
+  logoKey           String?
+  coverImageKey     String?
+  reviewReason      String?
+  commissionRateBps Int
+  createdAt         DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime             @default(now()) @updatedAt @db.Timestamptz(3)
+  branch            Branch?
+  categories        RestaurantCategory[]
+  documents         RestaurantDocument[]
+  users             RestaurantUser[]
+  menuSections      MenuSection[]
+  ledgerEntries     LedgerEntry[]
+}
+
+model RestaurantCategory {
+  restaurantId String       @db.Uuid
+  categoryId   String       @db.Uuid
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  category     FoodCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([restaurantId, categoryId])
+  @@index([categoryId])
+}
+
+model RestaurantDocument {
+  id           String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurantId String                 @db.Uuid
+  storageKey   String                 @unique
+  type         RestaurantDocumentType
+  createdAt    DateTime               @default(now()) @db.Timestamptz(3)
+  restaurant   Restaurant             @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+
+  @@index([restaurantId])
+}
+
+model Branch {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurantId    String          @unique @db.Uuid
+  neighborhoodId  String?         @db.Uuid
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  minOrderMinor   BigInt          @default(0) @db.BigInt
+  pickupEnabled   Boolean         @default(false)
+  acceptingOrders Boolean         @default(false)
+  lastSeenAt      DateTime?       @db.Timestamptz(3)
+  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime        @default(now()) @updatedAt @db.Timestamptz(3)
+  restaurant      Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  neighborhood    Neighborhood?   @relation(fields: [neighborhoodId], references: [id], onDelete: Restrict)
+  openingPeriods  OpeningPeriod[]
+  deliveryZones   DeliveryZone[]
+  orders          Order[]
+}
+
+model OpeningPeriod {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId  String @db.Uuid
+  dayOfWeek Int
+  opensAt   String @db.Char(5)
+  closesAt  String @db.Char(5)
+  branch    Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@index([branchId])
+}
+
+model DeliveryZone {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId       String       @db.Uuid
+  neighborhoodId String       @db.Uuid
+  feeMinor       BigInt       @db.BigInt
+  etaMinutes     Int
+  branch         Branch       @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  neighborhood   Neighborhood @relation(fields: [neighborhoodId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, neighborhoodId])
+  @@index([neighborhoodId])
+}
+
+model RestaurantUser {
+  id                     String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurantId           String           @db.Uuid
+  phone                  String           @unique
+  passwordHash           String
+  role                   RestaurantRole
+  isActive               Boolean          @default(true)
+  passwordChangeRequired Boolean          @default(false)
+  createdAt              DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime         @default(now()) @updatedAt @db.Timestamptz(3)
+  restaurant             Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  refreshTokens          RefreshToken[]
+  priceChanges           PriceChangeLog[]
+
+  @@index([restaurantId])
+}
+
+model MenuSection {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurantId String     @db.Uuid
+  name         String
+  sortOrder    Int        @default(0)
+  deletedAt    DateTime?  @db.Timestamptz(3)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @default(now()) @updatedAt @db.Timestamptz(3)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  items        MenuItem[]
+
+  @@index([restaurantId])
+}
+
+model MenuItem {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sectionId     String        @db.Uuid
+  name          String
+  description   String?
+  imageKey      String?
+  isAvailable   Boolean       @default(true)
+  sortOrder     Int           @default(0)
+  availableFrom String?       @db.Char(5)
+  availableTo   String?       @db.Char(5)
+  deletedAt     DateTime?     @db.Timestamptz(3)
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @default(now()) @updatedAt @db.Timestamptz(3)
+  section       MenuSection   @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  sizes         ItemSize[]
+  optionGroups  OptionGroup[]
+  orderItems    OrderItem[]
+
+  @@index([sectionId])
+}
+
+model ItemSize {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  menuItemId   String           @db.Uuid
+  name         String
+  priceMinor   BigInt           @db.BigInt
+  sortOrder    Int              @default(0)
+  deletedAt    DateTime?        @db.Timestamptz(3)
+  createdAt    DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime         @default(now()) @updatedAt @db.Timestamptz(3)
+  menuItem     MenuItem         @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  orderItems   OrderItem[]
+  priceChanges PriceChangeLog[]
+
+  @@index([menuItemId])
+}
+
+model OptionGroup {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  menuItemId String    @db.Uuid
+  name       String
+  minSelect  Int
+  maxSelect  Int
+  sortOrder  Int       @default(0)
+  deletedAt  DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @default(now()) @updatedAt @db.Timestamptz(3)
+  menuItem   MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  options    Option[]
+
+  @@index([menuItemId])
+}
+
+model Option {
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  optionGroupId String            @db.Uuid
+  name          String
+  priceMinor    BigInt            @db.BigInt
+  isAvailable   Boolean           @default(true)
+  sortOrder     Int               @default(0)
+  deletedAt     DateTime?         @db.Timestamptz(3)
+  createdAt     DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime          @default(now()) @updatedAt @db.Timestamptz(3)
+  optionGroup   OptionGroup       @relation(fields: [optionGroupId], references: [id], onDelete: Restrict)
+  orderOptions  OrderItemOption[]
+  priceChanges  PriceChangeLog[]
+
+  @@index([optionGroupId])
+}
+
+model PriceChangeLog {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurantUserId String         @db.Uuid
+  itemSizeId       String?        @db.Uuid
+  optionId         String?        @db.Uuid
+  oldPriceMinor    BigInt         @db.BigInt
+  newPriceMinor    BigInt         @db.BigInt
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  restaurantUser   RestaurantUser @relation(fields: [restaurantUserId], references: [id], onDelete: Restrict)
+  itemSize         ItemSize?      @relation(fields: [itemSizeId], references: [id], onDelete: Restrict)
+  option           Option?        @relation(fields: [optionId], references: [id], onDelete: Restrict)
+}
+
+model Order {
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId          String             @db.Uuid
+  branchId            String             @db.Uuid
+  orderNumber         String             @unique
+  idempotencyKey      String             @db.Uuid
+  type                OrderType
+  status              OrderStatus        @default(PENDING)
+  customerName        String
+  customerPhone       String?
+  addressSnapshot     Json?
+  note                String?            @db.VarChar(300)
+  foodSubtotalMinor   BigInt             @db.BigInt
+  discountMinor       BigInt             @default(0) @db.BigInt
+  deliveryFeeMinor    BigInt             @db.BigInt
+  totalMinor          BigInt             @db.BigInt
+  commissionRateBps   Int
+  commissionMinor     BigInt             @db.BigInt
+  etaMinutes          Int?
+  prepMinutes         Int?
+  estimatedReadyAt    DateTime?          @db.Timestamptz(3)
+  estimatedDeliveryAt DateTime?          @db.Timestamptz(3)
+  acceptedAt          DateTime?          @db.Timestamptz(3)
+  finishedAt          DateTime?          @db.Timestamptz(3)
+  lastReminderAt      DateTime?          @db.Timestamptz(3)
+  needsAttention      Boolean            @default(false)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime           @default(now()) @updatedAt @db.Timestamptz(3)
+  customer            Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  branch              Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  items               OrderItem[]
+  statusEvents        OrderStatusEvent[]
+  ledgerEntries       LedgerEntry[]
+  complaints          Complaint[]
+
+  @@unique([customerId, idempotencyKey])
+  @@index([branchId, status, createdAt])
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId        String            @db.Uuid
+  menuItemId     String            @db.Uuid
+  sizeId         String            @db.Uuid
+  name           String
+  sizeName       String
+  unitPriceMinor BigInt            @db.BigInt
+  totalMinor     BigInt            @db.BigInt
+  quantity       Int
+  note           String?           @db.VarChar(200)
+  order          Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  menuItem       MenuItem          @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  size           ItemSize          @relation(fields: [sizeId], references: [id], onDelete: Restrict)
+  options        OrderItemOption[]
+
+  @@index([orderId])
+}
+
+model OrderItemOption {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderItemId String    @db.Uuid
+  optionId    String    @db.Uuid
+  name        String
+  priceMinor  BigInt    @db.BigInt
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  option      Option    @relation(fields: [optionId], references: [id], onDelete: Restrict)
+
+  @@index([orderItemId])
+}
+
+model OrderStatusEvent {
+  id         String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId    String           @db.Uuid
+  from       OrderStatus?
+  to         OrderStatus
+  actorType  OrderActorType
+  actorId    String?          @db.Uuid
+  reasonCode OrderReasonCode?
+  note       String?
+  createdAt  DateTime         @default(now()) @db.Timestamptz(3)
+  order      Order            @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+}
+
+model LedgerEntry {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurantId     String          @db.Uuid
+  orderId          String?         @db.Uuid
+  type             LedgerEntryType
+  amountMinor      BigInt          @db.BigInt
+  createdByAdminId String?         @db.Uuid
+  paymentDate      DateTime?       @db.Date
+  paymentMethod    String?
+  reference        String?
+  reason           String?
+  createdAt        DateTime        @default(now()) @db.Timestamptz(3)
+  restaurant       Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  order            Order?          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  createdByAdmin   AdminUser?      @relation(fields: [createdByAdminId], references: [id], onDelete: Restrict)
+
+  @@index([restaurantId, createdAt])
+}
+
+model Complaint {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId    String          @db.Uuid
+  orderId       String          @db.Uuid
+  type          String
+  text          String          @db.VarChar(1000)
+  status        ComplaintStatus @default(OPEN)
+  internalNotes String?
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @default(now()) @updatedAt @db.Timestamptz(3)
+  customer      Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  order         Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+}
+
+model AdminUser {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String         @unique
+  passwordHash  String
+  totpSecret    String
+  role          AdminRole
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime       @default(now()) @updatedAt @db.Timestamptz(3)
+  refreshTokens RefreshToken[]
+  ledgerEntries LedgerEntry[]
+  auditLogs     AuditLog[]
+}
+
+model AuditLog {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminUserId String    @db.Uuid
+  action      String
+  entityType  String
+  entityId    String
+  before      Json?
+  after       Json?
+  ip          String
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+}
+
+model PlatformSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+}

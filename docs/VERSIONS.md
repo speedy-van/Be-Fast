@@ -46,3 +46,8 @@
 ## إصدارات المرحلة M1
 
 ثُبّت `@vitest/coverage-v8` بالإصدار `5.1.0`، الإصدار المستقر المطابق لـ Vitest المثبّت. يفرض حد تغطية الأسطر لحزمة `domain` في `corepack pnpm test`. [توثيق تغطية Vitest](https://vitest.dev/guide/coverage)
+
+## إصدارات المرحلة M2
+
+- ثُبّتت `prisma` و`@prisma/client` و`@prisma/adapter-pg` بالإصدار المستقر `7.10.1`. يطابق المحوّل PostgreSQL القياسي عبر `pg`. [دليل الترقية إلى Prisma ORM 7](https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7)
+- حُصر السماح بسكربتات تثبيت Prisma ومحركه بالإصدار `7.10.1`. [إعدادات بناء pnpm](https://pnpm.io/settings/build#allowbuilds)

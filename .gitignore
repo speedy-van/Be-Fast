@@ -6,6 +6,7 @@ next-env.d.ts
 dist/
 coverage/
 .storage/
+apps/api/src/generated/prisma/
 *.tsbuildinfo
 *.log
 

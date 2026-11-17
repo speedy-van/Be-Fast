@@ -4,6 +4,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { parseEnv } from "node:util";
 import { Client } from "pg";
 import type { TestProject } from "vitest/node";
+import { runMigrations } from "../prisma/migrate.ts";
 
 declare module "vitest" {
   interface ProvidedContext {
@@ -136,11 +137,16 @@ export default async function setup(project: TestProject) {
   const schema = `test_${randomUUID().replaceAll("-", "")}`;
   try {
     try {
-      await client.query(`CREATE SCHEMA "${schema}"`);
-    } finally {
-      await client.end();
+      try {
+        await client.query(`CREATE SCHEMA "${schema}"`);
+      } finally {
+        await client.end();
+      }
+    } catch {
+      throw new Error("Could not create an isolated PostgreSQL test schema.");
     }
 
+    runMigrations(url.href, schema);
     const scopedUrl = new URL(url);
     const options = scopedUrl.searchParams.get("options");
     scopedUrl.searchParams.set(
@@ -148,9 +154,9 @@ export default async function setup(project: TestProject) {
       `${options ? `${options} ` : ""}-c search_path=${schema}`,
     );
     project.provide("testDatabase", { url: scopedUrl.href, schema });
-  } catch {
+  } catch (error) {
     await dropSchema(url, schema);
-    throw new Error("Could not prepare an isolated PostgreSQL test schema.");
+    throw error;
   }
 
   return () => dropSchema(url, schema);
