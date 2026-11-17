@@ -13,6 +13,7 @@ export function openAuthTest(
     developmentOtp?: boolean;
     storage?: ApiOptions["storage"];
     onQuery?: ApiOptions["onQuery"];
+    push?: ApiOptions["push"];
   } = {},
 ) {
   const test = inject("testDatabase");
@@ -27,6 +28,7 @@ export function openAuthTest(
     logger: options.logger,
     storage: options.storage,
     onQuery: options.onQuery,
+    push: options.push,
     auth: {
       secret,
       now,

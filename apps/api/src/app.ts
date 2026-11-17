@@ -22,6 +22,12 @@ import { registerGeoRoutes } from "./geo/routes.js";
 import { registerMenuActionRoutes } from "./menu/action-routes.js";
 import { registerMenuCatalogRoutes } from "./menu/catalog-routes.js";
 import { registerMenuOptionRoutes } from "./menu/option-routes.js";
+import { registerComplaintRoutes } from "./orders/complaint-routes.js";
+import { registerOrderCreateRoute } from "./orders/create-route.js";
+import { startOrderJobs } from "./orders/jobs.js";
+import { DevPushProvider, type PushProvider } from "./orders/push.js";
+import { registerOrderReadRoutes } from "./orders/read-routes.js";
+import { registerOrderTransitionRoutes } from "./orders/transition-routes.js";
 import { registerMediaRoutes } from "./restaurant/media-routes.js";
 import { registerRestaurantRoutes } from "./restaurant/profile-routes.js";
 import { registerStaffRoutes } from "./restaurant/staff-routes.js";
@@ -33,6 +39,8 @@ export interface ApiOptions {
   logger?: FastifyServerOptions["logger"];
   storage?: StorageProvider;
   onQuery?: (query: string) => void;
+  push?: PushProvider;
+  orderJobs?: boolean;
   auth?: {
     secret: Uint8Array;
     now?: () => Date;
@@ -105,7 +113,28 @@ export function createApi(databaseUrl: string, options: ApiOptions = {}) {
       options.databaseSchema,
       options.onQuery,
     );
-    api.addHook("onClose", () => db.$disconnect());
+    let stopJobs: (() => Promise<void>) | undefined;
+    api.addHook("onClose", async () => {
+      try {
+        await stopJobs?.();
+      } finally {
+        await db.$disconnect();
+      }
+    });
+
+    const push = options.push ?? new DevPushProvider(api.log);
+    if (options.orderJobs) {
+      api.addHook("onReady", async () => {
+        stopJobs = await startOrderJobs({
+          db,
+          now,
+          push,
+          logger: api.log,
+          databaseUrl,
+          schema: "be_fast_jobs",
+        });
+      });
+    }
 
     const provider =
       options.auth.otpProvider ??
@@ -126,6 +155,10 @@ export function createApi(databaseUrl: string, options: ApiOptions = {}) {
     registerOtpRoutes(api, { db, otp, tokens });
     registerCredentialRoutes(api, { db, otp, tokens, now });
     registerTokenRoutes(api, { tokens });
+    registerOrderCreateRoute(api, { db, now, push });
+    registerOrderReadRoutes(api, { db, now });
+    registerComplaintRoutes(api, { db, now });
+    registerOrderTransitionRoutes(api, { db, now, push });
     registerCustomerAddressRoutes(api, { db });
     registerBrowseListRoutes(api, { db, now });
     registerBrowseDetailRoutes(api, { db, now });

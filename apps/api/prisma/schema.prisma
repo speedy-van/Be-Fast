@@ -511,17 +511,18 @@ model LedgerEntry {
 }
 
 model Complaint {
-  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  customerId    String          @db.Uuid
-  orderId       String          @db.Uuid
-  type          String
-  text          String          @db.VarChar(1000)
-  status        ComplaintStatus @default(OPEN)
-  internalNotes String?
-  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime        @default(now()) @updatedAt @db.Timestamptz(3)
-  customer      Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  order         Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId            String          @db.Uuid
+  orderId               String          @db.Uuid
+  type                  String
+  text                  String          @db.VarChar(1000)
+  status                ComplaintStatus @default(OPEN)
+  internalNotes         String?
+  nonDeliveryVerifiedAt DateTime?       @db.Timestamptz(3)
+  createdAt             DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime        @default(now()) @updatedAt @db.Timestamptz(3)
+  customer              Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  order                 Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
 
   @@index([orderId])
 }
@@ -536,9 +537,9 @@ model AdminUser {
   isActive         Boolean        @default(true)
   createdAt        DateTime       @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime       @default(now()) @updatedAt @db.Timestamptz(3)
-  refreshTokens RefreshToken[]
-  ledgerEntries LedgerEntry[]
-  auditLogs     AuditLog[]
+  refreshTokens    RefreshToken[]
+  ledgerEntries    LedgerEntry[]
+  auditLogs        AuditLog[]
 }
 
 model AuditLog {

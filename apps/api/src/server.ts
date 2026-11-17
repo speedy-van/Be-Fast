@@ -10,6 +10,7 @@ if (!host || !Number.isInteger(port) || port < 1 || port > 65_535) {
 
 const api = createApi(readDatabaseUrl(), {
   logger: true,
+  orderJobs: true,
   storage: createConfiguredStorage(process.env),
   auth: {
     secret: readAuthSecret(),

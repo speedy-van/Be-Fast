@@ -60,3 +60,7 @@
 
 - ثُبّت `sharp` ‏`0.35.5` لترميز WebP، و`@fastify/multipart` ‏`10.1.9` لقراءة رفع الملفات ضمن الحدود، و`@aws-sdk/client-s3` ‏`3.1170.0` للمخازن المتوافقة مع S3. [sharp](https://sharp.pixelplumbing.com/api-resize/) · [Fastify Multipart](https://github.com/fastify/fastify-multipart) · [S3](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/javascript_s3_code_examples.html)
 - أضاف pnpm استثناء عمر نشر للإصدارين المثبّتين من `@fastify/multipart` و`@aws-sdk/client-s3` فقط. [إعدادات pnpm](https://pnpm.io/settings/dependency-resolution#minimumreleaseageexclude)
+
+## إصدارات المرحلة M7
+
+- ثُبّت `pg-boss` بالإصدار المستقر `12.38.2`. يعمل عامل متابعة الطلبات على PostgreSQL، وتنشر عملية الخادم مهمة كل 15 ثانية مع منع التكرار على مستوى قاعدة البيانات. [جدولة pg-boss](https://pgboss.io/api/scheduling)
