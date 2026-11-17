@@ -42,3 +42,7 @@
 - أضاف pnpm استثناءات عمر النشر لإصدارات `typescript-eslint` الدقيقة المنشورة يوم التثبيت. تستمر قاعدة عمر النشر الافتراضية لبقية الاعتمادات. [إعدادات pnpm](https://pnpm.io/settings)
 - تتبع حزم Android إصدارات Expo SDK 58 المتوافقة مع React Native وAndroid 7.0. تشترك لوحة الإدارة مع Expo في إصدار React. [Expo SDK](https://docs.expo.dev/versions/latest/) · [Expo Router](https://docs.expo.dev/router/installation/) · [Next.js](https://nextjs.org/docs/app) · [Tailwind مع Next.js](https://tailwindcss.com/docs/installation/framework-guides/nextjs)
 - ثُبّتت صور Docker الخارجية ببصماتها في ملفات الإعداد، وثُبّت MinIO بمعرّف المصدر للإصدار الرسمي. [PostgreSQL](https://www.postgresql.org/support/versioning/) · [إصدار MinIO](https://github.com/minio/minio/releases/tag/RELEASE.2025-10-15T17-29-55Z) · [Go](https://go.dev/doc/devel/release) · [Alpine Linux](https://alpinelinux.org/downloads/)
+
+## إصدارات المرحلة M1
+
+ثُبّت `@vitest/coverage-v8` بالإصدار `5.1.0`، الإصدار المستقر المطابق لـ Vitest المثبّت. يفرض حد تغطية الأسطر لحزمة `domain` في `corepack pnpm test`. [توثيق تغطية Vitest](https://vitest.dev/guide/coverage)
