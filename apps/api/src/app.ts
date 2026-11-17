@@ -13,6 +13,9 @@ import { registerOtpRoutes } from "./auth/otp-routes.js";
 import { registerRateLimits } from "./auth/rate-limits.js";
 import { registerTokenRoutes } from "./auth/token-routes.js";
 import { createTokenService } from "./auth/tokens.js";
+import { registerBrowseDetailRoutes } from "./browse/detail-routes.js";
+import { registerBrowseListRoutes } from "./browse/list-routes.js";
+import { registerCustomerAddressRoutes } from "./customer/address-routes.js";
 import { ApiError, registerErrorHandlers } from "./errors.js";
 import { PrismaClient } from "./generated/prisma/client.ts";
 import { registerGeoRoutes } from "./geo/routes.js";
@@ -29,6 +32,7 @@ export interface ApiOptions {
   databaseSchema?: string;
   logger?: FastifyServerOptions["logger"];
   storage?: StorageProvider;
+  onQuery?: (query: string) => void;
   auth?: {
     secret: Uint8Array;
     now?: () => Date;
@@ -37,7 +41,11 @@ export interface ApiOptions {
   };
 }
 
-export function createDatabaseClient(databaseUrl: string, schema?: string) {
+export function createDatabaseClient(
+  databaseUrl: string,
+  schema?: string,
+  onQuery?: ApiOptions["onQuery"],
+) {
   const adapter = new PrismaPg(
     {
       connectionString: databaseUrl,
@@ -49,14 +57,17 @@ export function createDatabaseClient(databaseUrl: string, schema?: string) {
         schema ?? new URL(databaseUrl).searchParams.get("schema") ?? "public",
     },
   );
-  return new PrismaClient({
+  const db = new PrismaClient({
     adapter,
+    log: onQuery ? [{ emit: "event", level: "query" }] : [],
     transactionOptions: {
       isolationLevel: "ReadCommitted",
       maxWait: 10_000,
       timeout: 10_000,
     },
   });
+  if (onQuery) db.$on("query", ({ query }) => onQuery(query));
+  return db;
 }
 
 export function createApi(databaseUrl: string, options: ApiOptions = {}) {
@@ -89,7 +100,11 @@ export function createApi(databaseUrl: string, options: ApiOptions = {}) {
 
   if (options.auth) {
     const { secret, now = () => new Date() } = options.auth;
-    const db = createDatabaseClient(databaseUrl, options.databaseSchema);
+    const db = createDatabaseClient(
+      databaseUrl,
+      options.databaseSchema,
+      options.onQuery,
+    );
     api.addHook("onClose", () => db.$disconnect());
 
     const provider =
@@ -111,6 +126,9 @@ export function createApi(databaseUrl: string, options: ApiOptions = {}) {
     registerOtpRoutes(api, { db, otp, tokens });
     registerCredentialRoutes(api, { db, otp, tokens, now });
     registerTokenRoutes(api, { tokens });
+    registerCustomerAddressRoutes(api, { db });
+    registerBrowseListRoutes(api, { db, now });
+    registerBrowseDetailRoutes(api, { db, now });
     registerGeoRoutes(api, { db });
     registerRestaurantRoutes(api, { db });
     registerMenuCatalogRoutes(api, { db });

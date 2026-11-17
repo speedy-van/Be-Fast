@@ -1,5 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { isOpenAt, type OpeningPeriod } from "../src/hours.js";
+import {
+  isOpenAt,
+  isWithinDamascusTimeWindow,
+  type OpeningPeriod,
+} from "../src/hours.js";
+
+describe("daily item windows in Asia/Damascus", () => {
+  it.each([
+    [null, null, "2026-01-03T23:00:00Z", true],
+    [null, "02:00", "2026-01-03T22:30:00Z", true],
+    [null, "02:00", "2026-01-03T23:00:00Z", false],
+    ["08:00", null, "2026-01-03T05:00:00Z", true],
+    ["08:00", null, "2026-01-03T04:59:00Z", false],
+    ["08:00", "12:00", "2026-01-03T05:00:00Z", true],
+    ["08:00", "12:00", "2026-01-03T09:00:00Z", false],
+    ["18:00", "02:00", "2026-01-03T22:30:00Z", true],
+    ["18:00", "02:00", "2026-01-03T23:00:00Z", false],
+    ["10:00", "10:00", "2026-01-03T23:00:00Z", true],
+  ] as const)("evaluates bounds %s to %s at %s", (from, to, utc, expected) => {
+    expect(isWithinDamascusTimeWindow(from, to, new Date(utc))).toBe(expected);
+  });
+});
 
 describe("isOpenAt in Asia/Damascus", () => {
   const overnight: OpeningPeriod = {

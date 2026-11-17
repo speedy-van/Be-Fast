@@ -12,6 +12,7 @@ export function openAuthTest(
     logger?: ApiOptions["logger"];
     developmentOtp?: boolean;
     storage?: ApiOptions["storage"];
+    onQuery?: ApiOptions["onQuery"];
   } = {},
 ) {
   const test = inject("testDatabase");
@@ -25,6 +26,7 @@ export function openAuthTest(
     databaseSchema: test.schema,
     logger: options.logger,
     storage: options.storage,
+    onQuery: options.onQuery,
     auth: {
       secret,
       now,
