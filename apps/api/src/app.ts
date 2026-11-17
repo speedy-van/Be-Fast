@@ -2,6 +2,11 @@ import { createHmac } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import Fastify, { LogController, type FastifyServerOptions } from "fastify";
 import { Pool } from "pg";
+import { registerAdminAuditRoutes } from "./admin/audit-routes.js";
+import { registerAdminCustomerRoutes } from "./admin/customer-routes.js";
+import { registerAdminDashboardRoutes } from "./admin/dashboard-routes.js";
+import { registerAdminSettingsRoutes } from "./admin/settings-routes.js";
+import { registerAdminStaffRoutes } from "./admin/staff-routes.js";
 import { registerAccessGuards } from "./auth/access.js";
 import { registerCredentialRoutes } from "./auth/credential-routes.js";
 import {
@@ -155,6 +160,11 @@ export function createApi(databaseUrl: string, options: ApiOptions = {}) {
     const tokens = createTokenService({ db, secret, now });
     registerRateLimits(api, now);
     registerAccessGuards(api, tokens);
+    registerAdminAuditRoutes(api, db);
+    registerAdminCustomerRoutes(api, { db, now });
+    registerAdminDashboardRoutes(api, { db, now });
+    registerAdminSettingsRoutes(api, db);
+    registerAdminStaffRoutes(api, db);
     registerOtpRoutes(api, { db, otp, tokens });
     registerCredentialRoutes(api, { db, otp, tokens, now });
     registerTokenRoutes(api, { tokens });

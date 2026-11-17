@@ -405,6 +405,16 @@ describe("order reads", () => {
           .orders.map(({ id }) => id);
         expect(ids).toContain(pending.order.id);
         expect(ids).not.toContain(resolved.order.id);
+        const active = await test.api.inject({
+          url: "/admin/orders?active=true",
+          headers: support.headers,
+        });
+        expect(active.statusCode).toBe(200);
+        const activeIds = orderListResponseSchema
+          .parse(active.json())
+          .orders.map(({ id }) => id);
+        expect(activeIds).toContain(pending.order.id);
+        expect(activeIds).not.toContain(resolved.order.id);
         expect(
           (
             await test.api.inject({

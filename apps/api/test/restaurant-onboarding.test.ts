@@ -375,6 +375,28 @@ describe("restaurant review workflow", () => {
         const operations = await admin(test, "OPERATIONS");
         const finance = await admin(test, "FINANCE");
         const endpoint = `/admin/restaurants/${owner.id}/commission`;
+        const commissions = "/admin/restaurants/commissions";
+        expect(
+          (await send(test, operations.accessToken, "GET", commissions))
+            .statusCode,
+        ).toBe(403);
+        const read = await send(test, finance.accessToken, "GET", commissions);
+        expect(read.statusCode).toBe(200);
+        expect(read.json()).toContainEqual({
+          id: owner.id,
+          name: null,
+          commissionRateBps: 1_000,
+        });
+        expect(
+          (
+            await send(
+              test,
+              finance.accessToken,
+              "GET",
+              `/admin/restaurants/${owner.id}`,
+            )
+          ).statusCode,
+        ).toBe(403);
         const change = { commissionRateBps: 1_750 };
         const denied = await send(
           test,

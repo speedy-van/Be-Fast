@@ -9,11 +9,16 @@
     "dev": "next dev"
   },
   "dependencies": {
+    "@be-fast/api-client": "workspace:*",
+    "@be-fast/contracts": "workspace:*",
+    "@be-fast/domain": "workspace:*",
     "@be-fast/i18n": "workspace:*",
     "@be-fast/ui-tokens": "workspace:*",
+    "@fontsource/ibm-plex-sans-arabic": "5.3.0",
     "next": "16.4.6",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.5",

@@ -28,7 +28,11 @@ export const restaurantOrderListQuerySchema = z
   .strictObject(orderListFilters)
   .refine(orderedRange);
 export const adminOrderListQuerySchema = z
-  .strictObject({ ...orderListFilters, q: z.string().trim().min(1).optional() })
+  .strictObject({
+    ...orderListFilters,
+    q: z.string().trim().min(1).optional(),
+    active: z.literal("true").optional(),
+  })
   .refine(orderedRange);
 
 const orderReadOptionSchema = z.strictObject({

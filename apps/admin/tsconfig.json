@@ -12,6 +12,10 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "app/**/*.tsx"
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "features/**/*.ts",
+    "features/**/*.tsx",
+    "lib/**/*.ts"
   ]
 }

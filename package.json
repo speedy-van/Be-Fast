@@ -16,11 +16,14 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run build --filter=./packages/* && corepack pnpm --filter @be-fast/api db:generate && node node_modules/vitest/vitest.mjs run",
+    "test": "turbo run build --filter=./packages/* && corepack pnpm --filter @be-fast/api db:generate && node node_modules/vitest/vitest.mjs run && corepack pnpm test:admin",
+    "test:admin": "tsc --project e2e/tsconfig.json --noEmit && turbo run build --filter=admin --filter=@be-fast/api && playwright test",
     "build": "turbo run build"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
     "@types/node": "26.6.6",
     "@vitest/coverage-v8": "5.1.0",
     "eslint": "10.15.0",

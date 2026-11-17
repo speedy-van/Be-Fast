@@ -64,3 +64,9 @@
 ## إصدارات المرحلة M7
 
 - ثُبّت `pg-boss` بالإصدار المستقر `12.38.2`. يعمل عامل متابعة الطلبات على PostgreSQL، وتنشر عملية الخادم مهمة كل 15 ثانية مع منع التكرار على مستوى قاعدة البيانات. [جدولة pg-boss](https://pgboss.io/api/scheduling)
+
+## إصدارات المرحلة M9
+
+- يضمّن الويب خط IBM Plex Sans Arabic بالوزنين 400 و700 من `@fontsource/ibm-plex-sans-arabic` ‏`5.3.0`. [Fontsource](https://fontsource.org/fonts/ibm-plex-sans-arabic/use)
+
+- ثُبّت `@playwright/test` ‏`1.65.1` لاختبار لوحة الإدارة في المتصفح، و`@axe-core/playwright` ‏`4.14.0` لفحص التباين. تستخدم الاختبارات قناة Chrome المثبّتة على جهاز التطوير. [Playwright Test](https://playwright.dev/docs/test-configuration) · [axe-core Playwright](https://www.npmjs.com/package/@axe-core/playwright)

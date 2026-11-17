@@ -274,6 +274,13 @@ const reviewActions = {
 >;
 
 function registerAdminRestaurantRoutes(api: FastifyInstance, db: PrismaClient) {
+  api.get("/admin/restaurants/commissions", financeOperators, () =>
+    db.restaurant.findMany({
+      select: { id: true, name: true, commissionRateBps: true },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+    }),
+  );
+
   api.get("/admin/restaurants", reviewOperators, async (request) => {
     const { status } = adminRestaurantListQuerySchema.parse(request.query);
     return db.restaurant.findMany({

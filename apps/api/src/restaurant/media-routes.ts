@@ -6,6 +6,7 @@ import {
   menuItemIdSchema,
   publicImagePathSchema,
   restaurantDocumentPathSchema,
+  restaurantIdParamsSchema,
   restaurantImagePathSchema,
   signedDocumentQuerySchema,
 } from "@be-fast/contracts";
@@ -249,6 +250,27 @@ export function registerMediaRoutes(
     if (!document) throw new ApiError(404, "NOT_FOUND");
     return document;
   });
+
+  api.get(
+    "/admin/restaurants/:restaurantId/documents",
+    reviewTeamOnly,
+    async (request, reply) => {
+      const { restaurantId } = restaurantIdParamsSchema.parse(request.params);
+      const restaurant = await db.restaurant.findUnique({
+        where: { id: restaurantId },
+        select: {
+          documents: {
+            orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+            select: documentMetadata,
+          },
+        },
+      });
+      if (!restaurant) throw new ApiError(404, "NOT_FOUND");
+      return reply
+        .header("Cache-Control", "no-store")
+        .send(restaurant.documents);
+    },
+  );
 
   api.get(
     "/admin/restaurants/:restaurantId/documents/:documentId/link",

@@ -21,7 +21,7 @@ interface CredentialRoutesOptions {
   now: () => Date;
 }
 
-async function readDefaultCommission(
+export async function readDefaultCommission(
   tx: Prisma.TransactionClient,
 ): Promise<number> {
   const setting = await tx.platformSetting.findUnique({

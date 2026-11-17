@@ -72,3 +72,35 @@ export const restaurantReviewSchema = z.strictObject({ reason: requiredText });
 export const restaurantCommissionSchema = z.strictObject({
   commissionRateBps: z.number().int().min(0).max(10_000),
 });
+
+export const adminRestaurantCommissionRecordSchema =
+  restaurantCommissionSchema.extend({ id: uuid, name: z.string().nullable() });
+
+export const adminRestaurantProfileSummarySchema =
+  adminRestaurantCommissionRecordSchema.extend({
+    status: z.enum(restaurantStatuses),
+    contactPhone: z.string().nullable(),
+    logoKey: z.string().nullable(),
+    coverImageKey: z.string().nullable(),
+    reviewReason: z.string().nullable(),
+  });
+
+export const adminRestaurantProfileSchema =
+  adminRestaurantProfileSummarySchema.extend({
+    categoryIds: z.array(uuid),
+    documentCount: z.int().nonnegative(),
+    branch: z
+      .strictObject({
+        id: uuid,
+        neighborhoodId: uuid.nullable(),
+        address: z.string().nullable(),
+        latitude: z.number().nullable(),
+        longitude: z.number().nullable(),
+        minOrderMinor: nonnegativeMinor,
+        pickupEnabled: z.boolean(),
+        acceptingOrders: z.boolean(),
+        openingPeriods: openingPeriodsSchema.shape.periods,
+        deliveryZones: z.array(deliveryZoneSchema.extend({ id: uuid })),
+      })
+      .nullable(),
+  });

@@ -120,10 +120,13 @@ export function registerOrderReadRoutes(
   );
 
   api.get("/admin/orders", adminOrderReaders, (request) => {
-    const { q, ...filters } = adminOrderListQuerySchema.parse(request.query);
+    const { q, active, ...filters } = adminOrderListQuerySchema.parse(
+      request.query,
+    );
     const phone = q === undefined ? null : normalizeSyrianPhone(q);
     return listOrders(db, requireAdmin(request), now(), {
       ...dateFilters(filters),
+      ...(active && { AND: { status: { notIn: [...TERMINAL_STATES] } } }),
       OR:
         q === undefined
           ? undefined

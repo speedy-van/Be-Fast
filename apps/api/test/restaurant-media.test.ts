@@ -189,6 +189,21 @@ it(
       ).toBe(404);
 
       const privatePath = `/admin/restaurants/${seller.restaurantId}/documents/${document.id}`;
+      const documentList = `/admin/restaurants/${seller.restaurantId}/documents`;
+      const metadata = await api.inject({
+        url: documentList,
+        headers: { authorization: opsAuth },
+      });
+      expect(metadata.statusCode).toBe(200);
+      expect(metadata.json()).toEqual([document]);
+      expect(
+        (
+          await api.inject({
+            url: documentList,
+            headers: { authorization: supportAuth },
+          })
+        ).statusCode,
+      ).toBe(403);
       const linkPath = `${privatePath}/link`;
       expect(
         (
