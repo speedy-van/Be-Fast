@@ -381,6 +381,44 @@ describe("order reads", () => {
   );
 
   it(
+    "lists orders finished on the chosen Damascus date even if they were created the previous day",
+    () =>
+      withOrderTest(async (test) => {
+        test.clock.now = new Date("2026-11-17T20:50:00.000Z");
+        const setup = await createOrder(
+          test,
+          "DELIVERED",
+          new Date("2026-11-17T21:10:00.000Z"),
+        );
+        test.clock.now = new Date("2026-11-18T00:00:00.000Z");
+        const owner = await createRestaurantUser(
+          test,
+          setup.branch.restaurantId,
+          "OWNER",
+        );
+        const read = (finishedOn: string) =>
+          test.api.inject({
+            method: "GET",
+            url: `/restaurant/orders?status=DELIVERED&finishedOn=${finishedOn}`,
+            headers: owner.headers,
+          });
+        const included = await read("2026-11-18");
+        expect(included.statusCode).toBe(200);
+        expect(
+          orderListResponseSchema
+            .parse(included.json())
+            .orders.map(({ id }) => id),
+        ).toEqual([setup.order.id]);
+        const excluded = await read("2026-11-17");
+        expect(excluded.statusCode).toBe(200);
+        expect(orderListResponseSchema.parse(excluded.json()).orders).toEqual(
+          [],
+        );
+      }),
+    integrationTimeoutMs,
+  );
+
+  it(
     "returns only still-pending flagged orders in the admin attention list",
     () =>
       withOrderTest(async (test) => {

@@ -43,3 +43,58 @@ export const createMenuItemSchema = itemMetadataSchema.extend({
     ),
 });
 export const patchMenuItemSchema = itemMetadataSchema.partial();
+
+const restaurantMenuOptionSchema = z.strictObject({
+  id,
+  optionGroupId: id,
+  name: z.string(),
+  priceMinor,
+  isAvailable: z.boolean(),
+  sortOrder,
+});
+const restaurantMenuGroupSchema = z.strictObject({
+  id,
+  menuItemId: id,
+  name: z.string(),
+  minSelect: z.int().nonnegative(),
+  maxSelect: z.int().nonnegative(),
+  sortOrder,
+  options: z.array(restaurantMenuOptionSchema),
+});
+const restaurantMenuSizeSchema = z.strictObject({
+  id,
+  menuItemId: id,
+  name: z.string(),
+  priceMinor,
+  sortOrder,
+});
+const restaurantMenuItemSchema = z.strictObject({
+  id,
+  sectionId: id,
+  name: z.string(),
+  description: z.string().nullable(),
+  imageKey: z.string().nullable(),
+  isAvailable: z.boolean(),
+  sortOrder,
+  availableFrom: itemTime.nullable(),
+  availableTo: itemTime.nullable(),
+  sizes: z.array(restaurantMenuSizeSchema),
+  optionGroups: z.array(restaurantMenuGroupSchema),
+});
+const restaurantMenuSectionSchema = z.strictObject({
+  id,
+  name: z.string(),
+  sortOrder,
+  items: z.array(restaurantMenuItemSchema),
+});
+
+export const restaurantMenuSchema = z.strictObject({
+  sections: z.array(restaurantMenuSectionSchema),
+});
+
+export type RestaurantMenu = z.infer<typeof restaurantMenuSchema>;
+export type RestaurantMenuSection = z.infer<typeof restaurantMenuSectionSchema>;
+export type RestaurantMenuItem = z.infer<typeof restaurantMenuItemSchema>;
+export type RestaurantMenuSize = z.infer<typeof restaurantMenuSizeSchema>;
+export type RestaurantMenuGroup = z.infer<typeof restaurantMenuGroupSchema>;
+export type RestaurantMenuOption = z.infer<typeof restaurantMenuOptionSchema>;

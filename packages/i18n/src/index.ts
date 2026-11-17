@@ -1,10 +1,14 @@
 export { adminShellText } from "./admin-shell.js";
+export { restaurantApp } from "./restaurant-app.js";
+export { restaurantMenuText } from "./restaurant-menu.js";
+export { restaurantOrders } from "./restaurant-orders.js";
 export { adminManagement } from "./admin-management.js";
 export {
   adminOperations,
   formatAdminDateTime,
   formatAdminCalendarDate,
   formatAdminRate,
+  formatAdminDateTime as formatDamascusDateTime,
 } from "./admin-operations.js";
 
 export const messages = {

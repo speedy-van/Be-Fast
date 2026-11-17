@@ -69,6 +69,14 @@ async function listOrders(
   };
 }
 
+async function finishedDateRange(db: PrismaClient, day: string) {
+  const [range] = await db.$queryRaw<{ gte: Date; lt: Date }[]>`
+    SELECT (${day}::date::timestamp AT TIME ZONE 'Asia/Damascus') AS gte,
+           ((${day}::date + 1)::timestamp AT TIME ZONE 'Asia/Damascus') AS lt
+  `;
+  return range;
+}
+
 export function registerOrderReadRoutes(
   api: FastifyInstance,
   { db, now }: { db: PrismaClient; now: () => Date },
@@ -97,14 +105,18 @@ export function registerOrderReadRoutes(
     });
   });
 
-  api.get("/restaurant/orders", orderReaders, (request) => {
-    const filters = restaurantOrderListQuerySchema.parse(request.query);
-    return listOrders(
-      db,
-      requireRestaurant(request),
-      now(),
-      dateFilters(filters),
+  api.get("/restaurant/orders", orderReaders, async (request) => {
+    const { finishedOn, ...filters } = restaurantOrderListQuerySchema.parse(
+      request.query,
     );
+    const finishedAt =
+      finishedOn === undefined
+        ? undefined
+        : await finishedDateRange(db, finishedOn);
+    return listOrders(db, requireRestaurant(request), now(), {
+      ...dateFilters(filters),
+      finishedAt,
+    });
   });
 
   api.get("/restaurant/orders/:id", orderReaders, (request) => {

@@ -70,3 +70,8 @@
 - يضمّن الويب خط IBM Plex Sans Arabic بالوزنين 400 و700 من `@fontsource/ibm-plex-sans-arabic` ‏`5.3.0`. [Fontsource](https://fontsource.org/fonts/ibm-plex-sans-arabic/use)
 
 - ثُبّت `@playwright/test` ‏`1.65.1` لاختبار لوحة الإدارة في المتصفح، و`@axe-core/playwright` ‏`4.14.0` لفحص التباين. تستخدم الاختبارات قناة Chrome المثبّتة على جهاز التطوير. [Playwright Test](https://playwright.dev/docs/test-configuration) · [axe-core Playwright](https://www.npmjs.com/package/@axe-core/playwright)
+
+## إصدارات M10 حتى التوقف
+
+- تستخدم شاشات المطعم `expo-secure-store` ‏`58.0.3` للجلسة، و`expo-document-picker` ‏`58.0.5` لاختيار الصور والمستندات، و`expo-font` ‏`58.0.12` للخط المضمّن من `@expo-google-fonts/ibm-plex-sans-arabic` ‏`0.4.2`. [مرجع Expo SDK](https://docs.expo.dev/versions/v58.0.0/)
+- تستخدم شاشة الطلبات `expo-audio` ‏`58.0.12` للنغمة المحلية، و`expo-network` ‏`58.0.5` لاستعادة السحب عند الاتصال، و`expo-keep-awake` ‏`58.0.4` لإبقاء الشاشة مضاءة. تستخدم اختبارات المكوّنات `react-test-renderer` ‏`19.3.0` و`@types/react-test-renderer` ‏`19.3.1`. [مرجع Expo SDK](https://docs.expo.dev/versions/v58.0.0/)

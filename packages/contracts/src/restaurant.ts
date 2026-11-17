@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RESTAURANT_ROLES } from "@be-fast/domain";
 import { syrianPhoneSchema } from "./auth.js";
 
 const requiredText = z.string().trim().min(1);
@@ -13,6 +14,18 @@ export const restaurantStatuses = [
   "REJECTED",
   "SUSPENDED",
 ] as const;
+
+export const restaurantSessionSchema = z.strictObject({
+  restaurantId: uuid,
+  role: z.enum(RESTAURANT_ROLES),
+  restaurantStatus: z.enum(restaurantStatuses),
+  currencyDisplayMode: z.enum(["OLD", "NEW"]),
+  expireAfterSec: z.int().positive(),
+  serverTime: z.iso.datetime(),
+  acceptingOrders: z.boolean(),
+});
+
+export type RestaurantSession = z.infer<typeof restaurantSessionSchema>;
 
 export const restaurantProfilePatchSchema = z.strictObject({
   name: requiredText.optional(),

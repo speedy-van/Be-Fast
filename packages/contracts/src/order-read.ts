@@ -25,7 +25,13 @@ function orderedRange({ from, to }: { from?: string; to?: string }) {
 
 export const readOrderParamsSchema = z.strictObject({ id: uuid });
 export const restaurantOrderListQuerySchema = z
-  .strictObject(orderListFilters)
+  .strictObject({
+    ...orderListFilters,
+    finishedOn: z.iso
+      .date()
+      .refine((date) => !date.startsWith("0000"))
+      .optional(),
+  })
   .refine(orderedRange);
 export const adminOrderListQuerySchema = z
   .strictObject({

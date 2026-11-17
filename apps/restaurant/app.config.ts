@@ -10,6 +10,8 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     ["expo-localization", { forcesRTL: true, supportedLocales: ["ar"] }],
+    ["expo-audio", { recordAudioAndroid: false, enableBackgroundPlayback: false, enableBackgroundRecording: false }],
+    "expo-secure-store",
   ],
 };
 

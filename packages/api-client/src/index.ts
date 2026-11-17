@@ -1,4 +1,4 @@
-import { errorEnvelopeSchema } from "@be-fast/contracts";
+import { errorEnvelopeSchema, type ErrorCode } from "@be-fast/contracts";
 
 export interface ResponseSchema<Output> {
   parse(value: unknown): Output;
@@ -8,6 +8,7 @@ export class ApiClientError extends Error {
   constructor(
     readonly status: number,
     readonly publicMessage?: string,
+    readonly code?: ErrorCode,
   ) {
     super(`API request failed (${status}).`);
   }
@@ -37,6 +38,7 @@ export async function requestJson<Output>(
     throw new ApiClientError(
       response.status,
       error.success ? error.data.error.message : undefined,
+      error.success ? error.data.error.code : undefined,
     );
   }
   return schema ? schema.parse(value) : value;

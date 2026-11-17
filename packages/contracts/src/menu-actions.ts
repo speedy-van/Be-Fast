@@ -8,3 +8,5 @@ export const menuAvailabilitySchema = z.strictObject({
 export const branchAcceptingOrdersSchema = z.strictObject({
   acceptingOrders: z.boolean(),
 });
+export const branchAcceptingOrdersResponseSchema =
+  branchAcceptingOrdersSchema.extend({ id: z.uuid() });

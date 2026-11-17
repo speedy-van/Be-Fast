@@ -38,6 +38,7 @@ import { registerOrderReadRoutes } from "./orders/read-routes.js";
 import { registerOrderTransitionRoutes } from "./orders/transition-routes.js";
 import { registerMediaRoutes } from "./restaurant/media-routes.js";
 import { registerRestaurantRoutes } from "./restaurant/profile-routes.js";
+import { registerRestaurantSessionRoute } from "./restaurant/session-route.js";
 import { registerStaffRoutes } from "./restaurant/staff-routes.js";
 import { createLocalStorage } from "./storage-config.js";
 import type { StorageProvider } from "./storage/provider.js";
@@ -180,6 +181,7 @@ export function createApi(databaseUrl: string, options: ApiOptions = {}) {
     registerBrowseDetailRoutes(api, { db, now });
     registerGeoRoutes(api, { db });
     registerRestaurantRoutes(api, { db });
+    registerRestaurantSessionRoute(api, { db, now });
     registerMenuCatalogRoutes(api, { db });
     registerMenuOptionRoutes(api, { db });
     registerMenuActionRoutes(api, { db });
