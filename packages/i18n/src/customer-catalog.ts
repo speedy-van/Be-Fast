@@ -54,6 +54,23 @@ export const customerCatalog = {
   cartConflict: "سلتك فيها طلب من مطعم تاني. بدك تفضّيها وتبدأ من جديد؟",
   replaceCart: "فضّي السلة وأضف الصنف",
   keepCart: "خلّي السلة متل ما هي",
+  deliverTo: "التوصيل إلى",
+  heroLine: "مطاعم حيّك جاهزة توصّلك",
+  categories: "التصنيفات",
+  nearbyRestaurants: "مطاعم بتوصّل لعندك",
+  open: "مفتوح",
+  freeDelivery: "توصيل مجاني",
+  minutesShort: "د",
+  menu: "المنيو",
+  viewCart: "عرض السلة",
+  itemsCount: "صنف",
+  required: "مطلوب",
+  chooseUpTo: "اختار لحد",
+  chooseOne: "اختار واحد",
+  emptyCartHint: "تصفّح مطاعم حيّك وأضف أطيب الأكلات لسلتك.",
+  deliveryFee: "رسوم التوصيل",
+  addMore: "أضف أصناف تانية",
+  stepArea: "حدد منطقتك لنعرض المطاعم اللي بتوصّل لعندك",
 } as const;
 
 export function describeCatalogUpdate(updatedAt: number, now = Date.now()) {

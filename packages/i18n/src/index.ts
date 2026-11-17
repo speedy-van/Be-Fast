@@ -21,6 +21,13 @@ export const messages = {
     customer: "بي فاست للعملاء",
     restaurant: "بي فاست للمطاعم",
   },
+  brand: {
+    name: "بي فاست",
+    customerLauncher: "بي فاست",
+    restaurantLauncher: "بي فاست مطاعم",
+    customerTagline: "أكلك المفضّل… بأسرع وقت",
+    restaurantTagline: "لوحة المطعم",
+  },
   menu: {
     copySuffix: " (نسخة)",
     regularSize: "عادي",

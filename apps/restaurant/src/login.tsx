@@ -7,10 +7,20 @@ import {
 } from "@be-fast/contracts";
 import { messages, restaurantApp as text } from "@be-fast/i18n";
 import { useRef, useState } from "react";
-import { View } from "react-native";
+import { BrandMark } from "@be-fast/ui-native";
+import { darkColors as colors, radius, spacing } from "@be-fast/ui-tokens";
+import { StyleSheet, View } from "react-native";
 import { sendRestaurantRequest, serviceError } from "./api";
 import { useRestaurantAuth } from "./session";
-import { AppText, Button, Field, ScrollScreen, Status, styles } from "./ui";
+import {
+  AppText,
+  Button,
+  Field,
+  nativeFont,
+  ScrollScreen,
+  Status,
+  styles,
+} from "./ui";
 
 type Mode = "login" | "register" | "change-password";
 
@@ -105,7 +115,13 @@ export function LoginScreen() {
 
   return (
     <ScrollScreen>
-      <AppText title>{text.brand}</AppText>
+      <View style={hero.wrap}>
+        <View style={hero.glow}>
+          <BrandMark size={132} body={colors.brand} bolt={colors.surface} gap={colors.surface} />
+        </View>
+        <AppText style={hero.title}>{messages.brand.name}</AppText>
+        <AppText muted>{text.brand}</AppText>
+      </View>
       <View style={styles.card}>
         <AppText title>
           {mode === "register"
@@ -185,3 +201,19 @@ export function LoginScreen() {
     </ScrollScreen>
   );
 }
+
+const hero = StyleSheet.create({
+  wrap: { alignItems: "center", gap: spacing.xs, paddingTop: spacing.xxl, paddingBottom: spacing.md },
+  glow: {
+    width: 168,
+    height: 168,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandTint,
+    borderWidth: 1,
+    borderColor: colors.brandSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  title: { fontSize: 32, lineHeight: 42, fontFamily: nativeFont.bold, color: colors.ink },
+});

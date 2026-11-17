@@ -1,4 +1,8 @@
+import { fileURLToPath } from "node:url";
 import { configDefaults, defineConfig } from "vitest/config";
+
+const mock = (name: string) =>
+  fileURLToPath(new URL(`./tests/mocks/${name}.ts`, import.meta.url));
 
 export default defineConfig({
   test: {
@@ -10,6 +14,14 @@ export default defineConfig({
     },
     projects: [
       {
+        resolve: {
+          // Native animation, SVG and haptics modules cannot load in Node.
+          alias: {
+            "react-native-reanimated": mock("reanimated"),
+            "react-native-svg": mock("svg"),
+            "expo-haptics": mock("haptics"),
+          },
+        },
         test: {
           name: "unit",
           exclude: [...configDefaults.exclude, "apps/api/**"],

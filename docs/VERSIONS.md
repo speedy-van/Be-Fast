@@ -80,3 +80,9 @@
 
 - يستخدم تطبيق العميل `@tanstack/react-query` و`@tanstack/react-query-persist-client` و`@tanstack/query-async-storage-persister` بالإصدار `5.107.1` للقوائم العامة المحفوظة، و`zustand` ‏`5.1.0` مع `@react-native-async-storage/async-storage` ‏`2.2.0` لحفظ السلة والعناوين. [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/plugins/persistQueryClient) · [Zustand](https://zustand.docs.pmnd.rs/integrations/persisting-store-data)
 - يستخدم `expo-crypto` ‏`58.0.8` لمفتاح تكرار الطلب، و`expo-image` ‏`58.0.18` للصور المصغرة، و`expo-location` ‏`58.0.22` لموقع الجهاز الاختياري. يشترك التطبيق مع المطعم في إصدارات الخط و`expo-font` و`expo-network` و`expo-secure-store` ومكتبات اختبار المكوّنات المذكورة في M10. [مرجع Expo SDK](https://docs.expo.dev/versions/v58.0.0/)
+
+## إعادة التصميم البصري (17 تشرين الثاني 2026)
+
+- أضيفت لتطبيقي Android إصدارات Expo SDK 58 المجمّعة: `react-native-reanimated` ‏`4.7.1` و`react-native-worklets` ‏`0.13.0` للحركات، و`react-native-svg` ‏`15.16.0` للشعار والأيقونات، و`expo-splash-screen` ‏`58.0.14` و`expo-system-ui` ‏`58.0.7` و`expo-haptics` ‏`58.0.8`.
+- حزمة `@be-fast/ui-native` الجديدة تجمع الشعار المتحرك والأيقونات ومكوّنات الحركة المشتركة بين التطبيقين.
+- في اختبارات الوحدة تُستبدل هذه الوحدات الأصلية ببدائل في `tests/mocks` عبر أسماء مستعارة في `vitest.config.ts`.

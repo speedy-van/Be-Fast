@@ -1,7 +1,7 @@
 import type { RestaurantMenuSection } from "@be-fast/contracts";
 import type { DisplayMode } from "@be-fast/domain";
 import { restaurantMenuText as t } from "@be-fast/i18n";
-import { colors } from "@be-fast/ui-tokens";
+import { darkColors as colors } from "@be-fast/ui-tokens";
 import { useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

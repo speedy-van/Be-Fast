@@ -1,18 +1,15 @@
 import type { PublicRestaurantDetailResponse } from "@be-fast/contracts";
-import { validateMenuOptions } from "@be-fast/domain";
+import { formatMoney, validateMenuOptions } from "@be-fast/domain";
 import { customerCatalog as text } from "@be-fast/i18n";
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 import type { CustomerRequest } from "../api";
-import { AppText } from "../ui";
+import { Button, EmptyState, ScrollScreen } from "../ui";
+import { foodSubtotal } from "./cart";
 import { BrowseScreen } from "./browse";
 import { ItemCustomizer, type ItemSelection } from "./item";
-import { MenuList, useRestaurantMenu } from "./menu";
-import {
-  CatalogButton,
-  CatalogNotice,
-  catalogStyles as styles,
-} from "./shared";
+import { MenuList, useRestaurantMenu, type CartSummary } from "./menu";
+import { CatalogNotice, catalogStyles as styles } from "./shared";
 import type { Cart, Region } from "./types";
 
 export type { Cart, CartLine, Region } from "./types";
@@ -27,6 +24,16 @@ interface CatalogProps {
   onChooseRegion: () => void;
   onOpenCart: () => void;
   onChangeCart: (cart: Cart | null) => void;
+}
+
+export function summarizeCart(cart: Cart | null): CartSummary | null {
+  if (!cart || cart.items.length === 0) return null;
+  const subtotal = foodSubtotal(cart.items);
+  return {
+    count: cart.items.reduce((sum, line) => sum + line.quantity, 0),
+    label:
+      subtotal === undefined ? "" : formatMoney(subtotal, cart.currencyDisplayMode),
+  };
 }
 
 function cartWithItem(
@@ -107,21 +114,28 @@ function RestaurantCatalog({
 
   if (replacement && restaurant) {
     return (
-      <ScrollView contentContainerStyle={styles.content}>
-        <AppText accessibilityRole="alert" title>
-          {text.cartConflict}
-        </AppText>
-        <CatalogButton
-          label={text.replaceCart}
-          primary
-          onPress={() => add(replacement, true)}
-          disabled={!canSelect(replacement)}
+      <ScrollScreen>
+        <EmptyState
+          icon="bag"
+          title={text.cartConflict}
+          action={
+            <View style={styles.stack}>
+              <Button
+                label={text.replaceCart}
+                primary
+                icon="refresh"
+                onPress={() => add(replacement, true)}
+                disabled={!canSelect(replacement)}
+              />
+              <Button
+                label={text.keepCart}
+                variant="soft"
+                onPress={() => setReplacement(null)}
+              />
+            </View>
+          }
         />
-        <CatalogButton
-          label={text.keepCart}
-          onPress={() => setReplacement(null)}
-        />
-      </ScrollView>
+      </ScrollScreen>
     );
   }
   if (item && restaurant) {
@@ -152,6 +166,7 @@ function RestaurantCatalog({
   return (
     <MenuList
       menu={menu}
+      cartSummary={cart?.restaurantId === id ? summarizeCart(cart) : null}
       onBack={onBack}
       onOpenCart={onOpenCart}
       onOpenItem={setItemId}
@@ -191,6 +206,7 @@ function RegionCatalog({
       onChooseRegion={onChooseRegion}
       onOpenRestaurant={setRestaurantId}
       onOpenCart={onOpenCart}
+      cartCount={summarizeCart(cart)?.count ?? 0}
     />
   );
 }
@@ -205,15 +221,15 @@ export function CatalogScreen(props: CatalogProps) {
       />
     );
   return (
-    <View style={styles.content}>
-      <AppText accessibilityRole="header" title>
-        {text.browseTitle}
-      </AppText>
-      <CatalogButton
-        label={text.chooseArea}
-        onPress={props.onChooseRegion}
-        primary
+    <ScrollScreen>
+      <EmptyState
+        icon="pin"
+        title={text.browseTitle}
+        message={text.stepArea}
+        action={
+          <Button label={text.chooseArea} onPress={props.onChooseRegion} primary icon="pin" />
+        }
       />
-    </View>
+    </ScrollScreen>
   );
 }

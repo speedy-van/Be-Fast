@@ -6,6 +6,7 @@ import {
   RESTAURANT_ROLES,
   allowedTransitions,
 } from "@be-fast/domain";
+import { restaurantOrders as text } from "@be-fast/i18n";
 import { createElement, type ReactElement, type ReactNode } from "react";
 import {
   act,
@@ -15,6 +16,7 @@ import {
 } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { RequestOptions } from "../api";
+import { Choices } from "../ui";
 import { OrderConsole } from "./console";
 import { OrderDetail, responseCountdown } from "./view";
 
@@ -163,6 +165,30 @@ async function mount(element: ReactElement) {
   if (!renderer) throw new Error("Order component was not mounted.");
   return renderer;
 }
+
+it("keeps order tabs and choice chips at least 48dp across", async () => {
+  const fixture = restaurantMock(() => ({ orders: [pending] }));
+  const tree = await mount(
+    <>
+      <OrderConsole {...consoleProps} request={fixture.request} />
+      <Choices
+        label={text.title}
+        selected="one"
+        values={[{ id: "one", label: text.title }]}
+        onSelect={() => undefined}
+      />
+    </>,
+  );
+  const tabsAndChips = tree.root.findAll(
+    (node) => typeof node.type === "string" && node.props.accessibilityState?.selected !== undefined,
+  );
+  expect(tabsAndChips).toHaveLength(Object.keys(text.tabs).length + 1);
+  for (const control of tabsAndChips) {
+    expect([control.props.style as unknown].flat(3)).toContainEqual(
+      expect.objectContaining({ minWidth: 48, minHeight: 48 }),
+    );
+  }
+});
 
 it("renders exactly the transitions from the shared state machine for every status, role and order type", async () => {
   const tree = await mount(

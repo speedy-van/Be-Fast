@@ -11,15 +11,11 @@ import {
   type RestaurantRole,
 } from "@be-fast/domain";
 import { messages, restaurantOrders as text } from "@be-fast/i18n";
+import { enterUp, GradientFill, Icon, PressableScale, type IconName } from "@be-fast/ui-native";
+import { darkColors as colors } from "@be-fast/ui-tokens";
 import { useRef, useState } from "react";
-import {
-  Linking,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Linking, ScrollView, Text, TextInput, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { styles } from "./styles";
 
 export type Transition = ReturnType<
@@ -33,21 +29,75 @@ const reasons: Partial<Record<OrderStatus, readonly ReasonCode[]>> = {
   DELIVERY_FAILED: DELIVERY_FAILURE_REASON_CODES,
 };
 
+type Tone = "primary" | "success" | "danger";
+
+/** Visual identity of each order status: accent colour and icon. */
+export const statusLook: Record<
+  OrderStatus,
+  { color: string; soft: string; icon: IconName }
+> = {
+  PENDING: { color: colors.brandText, soft: colors.brandSoft, icon: "bell" },
+  ACCEPTED: { color: colors.info, soft: colors.infoSoft, icon: "check" },
+  PREPARING: { color: colors.warning, soft: colors.warningSoft, icon: "chef" },
+  READY: { color: colors.success, soft: colors.successSoft, icon: "box" },
+  OUT_FOR_DELIVERY: { color: colors.info, soft: colors.infoSoft, icon: "scooter" },
+  DELIVERED: { color: colors.success, soft: colors.successSoft, icon: "check" },
+  REJECTED: { color: colors.danger, soft: colors.dangerSoft, icon: "close" },
+  EXPIRED: { color: colors.danger, soft: colors.dangerSoft, icon: "clock" },
+  CANCELLED: { color: colors.danger, soft: colors.dangerSoft, icon: "close" },
+  DELIVERY_FAILED: { color: colors.danger, soft: colors.dangerSoft, icon: "alert" },
+};
+
+const transitionTone: Partial<Record<OrderStatus, Tone>> = {
+  ACCEPTED: "primary",
+  PREPARING: "primary",
+  READY: "primary",
+  OUT_FOR_DELIVERY: "primary",
+  DELIVERED: "success",
+  REJECTED: "danger",
+  CANCELLED: "danger",
+  DELIVERY_FAILED: "danger",
+};
+
+export function StatusPill({ status, label }: { status: OrderStatus; label: string }) {
+  const look = statusLook[status];
+  return (
+    <View style={[styles.pill, { backgroundColor: look.soft }]}>
+      <Icon name={look.icon} size={14} color={look.color} strokeWidth={2.4} />
+      <Text style={[styles.pillText, { color: look.color }]}>{label}</Text>
+    </View>
+  );
+}
+
 export function OrderButton({
   label,
   onPress,
   disabled = false,
   selected,
   testID,
+  tone,
+  icon,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   selected?: boolean;
   testID?: string;
+  tone?: Tone;
+  icon?: IconName;
 }) {
+  const foreground =
+    tone === "primary"
+      ? colors.onBrand
+      : tone === "success"
+        ? colors.success
+        : tone === "danger"
+          ? colors.danger
+          : selected
+            ? colors.brandText
+            : colors.ink;
   return (
-    <Pressable
+    <PressableScale
       testID={testID}
       accessibilityRole="button"
       accessibilityState={{ disabled, selected }}
@@ -56,11 +106,18 @@ export function OrderButton({
       style={[
         styles.button,
         selected && styles.activeButton,
+        tone === "primary" && styles.primaryButton,
+        tone === "success" && styles.successButton,
+        tone === "danger" && styles.dangerButton,
         disabled && styles.disabled,
       ]}
     >
-      <Text style={styles.buttonText}>{label}</Text>
-    </Pressable>
+      {tone === "primary" && (
+        <GradientFill from={colors.brandStrong} to={colors.brandDeep} id="order-action" />
+      )}
+      {icon && <Icon name={icon} size={20} color={foreground} />}
+      <Text style={[styles.buttonText, { color: foreground }]}>{label}</Text>
+    </PressableScale>
   );
 }
 
@@ -103,7 +160,10 @@ function OrderCustomer({
   if (!order.customerName && !phone && address.length === 0) return null;
   return (
     <View style={styles.panel}>
-      <Text style={styles.heading}>{text.customer}</Text>
+      <View style={styles.inline}>
+        <Icon name="user" size={20} color={colors.brandText} />
+        <Text style={styles.heading}>{text.customer}</Text>
+      </View>
       {order.customerName && (
         <Text style={styles.detail}>{order.customerName}</Text>
       )}
@@ -120,6 +180,7 @@ function OrderCustomer({
       {phone && /^\+9639\d{8}$/u.test(phone) && (
         <OrderButton
           label={text.call}
+          icon="phone"
           onPress={() => {
             void Linking.openURL(`tel:${phone}`).catch(reportError);
           }}
@@ -220,16 +281,22 @@ export function OrderDetail({
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.row}>
-        <OrderButton label={text.returnToOrders} onPress={onClose} />
-        <Text accessibilityRole="header" style={styles.title}>
+      <View style={styles.spread}>
+        <OrderButton label={text.returnToOrders} onPress={onClose} icon="back" />
+        <Text accessibilityRole="header" style={styles.orderNumber}>
           {order.orderNumber}
         </Text>
       </View>
-      <View style={styles.panel}>
-        <Text style={styles.heading}>
-          {text.status[order.status]} · {text.type[order.type]}
-        </Text>
+      <Animated.View
+        entering={enterUp(0)}
+        style={[styles.panel, { backgroundColor: statusLook[order.status].soft, borderColor: statusLook[order.status].color }]}
+      >
+        <View style={styles.inline}>
+          <Icon name={statusLook[order.status].icon} size={26} color={statusLook[order.status].color} />
+          <Text style={[styles.heading, { color: statusLook[order.status].color }]}>
+            {text.status[order.status]} · {text.type[order.type]}
+          </Text>
+        </View>
         {order.status === "PENDING" && (
           <Text style={styles.error}>
             {text.remaining}{" "}
@@ -237,27 +304,37 @@ export function OrderDetail({
           </Text>
         )}
         {order.note && <Text style={styles.detail}>{order.note}</Text>}
-      </View>
-      <View style={styles.panel}>
-        <Text style={styles.heading}>{text.items}</Text>
-        {order.items.map((item) => (
-          <View key={item.id}>
-            <Text style={styles.detail}>
-              {item.name}
-              {item.sizeName === messages.menu.regularSize
-                ? ""
-                : ` ${item.sizeName}`}{" "}
-              × {item.quantity}
-            </Text>
-            {item.options.map((option) => (
-              <Text key={option.id} style={styles.text}>
-                {option.name}
+      </Animated.View>
+      <Animated.View entering={enterUp(1)} style={styles.panel}>
+        <View style={styles.inline}>
+          <Icon name="receipt" size={20} color={colors.brandText} />
+          <Text style={styles.heading}>{text.items}</Text>
+        </View>
+        {order.items.map((item, index) => (
+          <View key={item.id} style={styles.row}>
+            {index > 0 && <View style={[styles.divider, { width: "100%" }]} />}
+            <View style={styles.qty}>
+              <Text style={[styles.itemLine, { color: colors.brandText }]}>
+                {item.quantity}×
               </Text>
-            ))}
-            {item.note && <Text style={styles.text}>{item.note}</Text>}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.detail}>
+                {item.name}
+                {item.sizeName === messages.menu.regularSize
+                  ? ""
+                  : ` ${item.sizeName}`}
+              </Text>
+              {item.options.map((option) => (
+                <Text key={option.id} style={styles.text}>
+                  + {option.name}
+                </Text>
+              ))}
+              {item.note && <Text style={styles.warning}>{item.note}</Text>}
+            </View>
           </View>
         ))}
-      </View>
+      </Animated.View>
       {role === "KITCHEN" ? (
         order.customerName && (
           <Text style={styles.detail}>{order.customerName}</Text>
@@ -275,6 +352,8 @@ export function OrderDetail({
               key={target}
               testID={`transition-${target}`}
               label={text.transition[target]}
+              tone={transitionTone[target]}
+              icon={statusLook[target].icon}
               disabled={saving || isOffline}
               onPress={() => choose(target)}
             />
@@ -301,6 +380,7 @@ export function OrderDetail({
               ? prepTimes.map((prepMinutes) => (
                   <OrderButton
                     key={prepMinutes}
+                    icon="clock"
                     testID={`prep-${prepMinutes}`}
                     label={`${prepMinutes} ${text.minutes}`}
                     disabled={saving || isOffline}

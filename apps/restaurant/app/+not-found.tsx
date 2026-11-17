@@ -1,7 +1,7 @@
 import { Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { messages } from "@be-fast/i18n";
-import { colors } from "@be-fast/ui-tokens";
+import { darkColors as colors } from "@be-fast/ui-tokens";
 
 export default function NotFoundScreen() {
   return (

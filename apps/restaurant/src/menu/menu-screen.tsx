@@ -8,7 +8,7 @@ import {
 } from "@be-fast/contracts";
 import { formatMoney, type DisplayMode } from "@be-fast/domain";
 import { restaurantMenuText as t } from "@be-fast/i18n";
-import { colors } from "@be-fast/ui-tokens";
+import { darkColors as colors } from "@be-fast/ui-tokens";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, SectionList, StyleSheet, Switch, View } from "react-native";
 import { pickRestaurantImage } from "../media";
@@ -51,8 +51,8 @@ function Availability({
         disabled={disabled}
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: colors.border, true: colors.brandText }}
-        thumbColor={colors.panel}
+        trackColor={{ false: colors.subtleBorder, true: colors.brandStrong }}
+        thumbColor={colors.ink}
         hitSlop={8}
         style={styles.switch}
       />

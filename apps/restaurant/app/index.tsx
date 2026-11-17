@@ -3,9 +3,19 @@ import {
   restaurantApp as text,
   restaurantOrders,
 } from "@be-fast/i18n";
-import { colors } from "@be-fast/ui-tokens";
+import { messages } from "@be-fast/i18n";
+import {
+  BrandMark,
+  Icon,
+  PressableScale,
+  Pulse,
+  ScreenTransition,
+  type IconName,
+} from "@be-fast/ui-native";
+import { darkColors as colors, radius, spacing } from "@be-fast/ui-tokens";
 import { useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import Animated, { ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { serviceError } from "../src/api";
 import { BranchControls } from "../src/branch-controls";
@@ -16,7 +26,14 @@ import { RestaurantOrders } from "../src/orders";
 import { ReportsScreen, StaffControls } from "../src/owner-controls";
 import { useRestaurantGeo } from "../src/region";
 import { useRestaurantAuth, useRestaurantSession } from "../src/session";
-import { AppText, Button, ScrollScreen, Status, styles } from "../src/ui";
+import {
+  AppText,
+  Button,
+  nativeFont,
+  ScrollScreen,
+  Status,
+  styles,
+} from "../src/ui";
 
 const ownerPages = [
   "orders",
@@ -27,6 +44,13 @@ const ownerPages = [
 ] as const;
 const staffPages = ["orders", "menu", "settings"] as const;
 type Page = (typeof ownerPages)[number];
+const pageIcons: Record<Page, IconName> = {
+  orders: "receipt",
+  menu: "list",
+  onboarding: "store",
+  reports: "chart",
+  settings: "sliders",
+};
 
 function BranchManagement() {
   const geo = useRestaurantGeo();
@@ -63,6 +87,8 @@ function SettingsScreen() {
       <Status busy={signingOut} error={error} />
       <Button
         label={text.logout}
+        icon="logout"
+        danger
         onPress={() => void logout()}
         disabled={signingOut}
       />
@@ -86,6 +112,25 @@ function Workspace() {
 
   return (
     <View style={styles.body}>
+      <View style={layout.header}>
+        <View style={layout.brand}>
+          <BrandMark size={40} body={colors.brand} bolt={colors.surface} gap={colors.surface} />
+        </View>
+        <View style={styles.flex}>
+          <AppText style={layout.brandName}>{messages.brand.name}</AppText>
+          <AppText muted style={layout.caption}>
+            {text[page]}
+          </AppText>
+        </View>
+        <Pulse active={!connection?.offline}>
+          <View
+            style={[
+              layout.live,
+              { backgroundColor: connection?.offline ? colors.danger : colors.success },
+            ]}
+          />
+        </Pulse>
+      </View>
       <View style={styles.body}>
         <RestaurantOrders
           visible={page === "orders"}
@@ -101,28 +146,52 @@ function Workspace() {
             </AppText>
           </View>
         )}
-        {page === "menu" && <MenuScreen />}
-        {page === "onboarding" && <OnboardingScreen />}
-        {page === "reports" && <ReportsScreen />}
-        {page === "settings" && <SettingsScreen />}
+        {page !== "orders" && (
+          <ScreenTransition screenKey={page}>
+            {page === "menu" && <MenuScreen />}
+            {page === "onboarding" && <OnboardingScreen />}
+            {page === "reports" && <ReportsScreen />}
+            {page === "settings" && <SettingsScreen />}
+          </ScreenTransition>
+        )}
       </View>
-      <ScrollView
-        horizontal
-        style={layout.navigation}
-        contentContainerStyle={layout.tabs}
-      >
-        {pages.map((item) => (
-          <Pressable
-            key={item}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: page === item }}
-            onPress={() => select(item)}
-            style={[layout.tab, page === item && styles.pressed]}
-          >
-            <AppText>{text[item]}</AppText>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <View style={layout.navigation} accessibilityRole="tablist">
+        {pages.map((item) => {
+          const selected = page === item;
+          return (
+            <PressableScale
+              key={item}
+              accessibilityRole="tab"
+              accessibilityLabel={text[item]}
+              accessibilityState={{ selected }}
+              onPress={() => select(item)}
+              pressedScale={0.9}
+              style={layout.tab}
+            >
+              <View style={layout.tabIcon}>
+                {selected && (
+                  <Animated.View
+                    entering={ZoomIn.springify().damping(14)}
+                    style={layout.tabPill}
+                  />
+                )}
+                <Icon
+                  name={pageIcons[item]}
+                  size={24}
+                  color={selected ? colors.brandText : colors.mutedInk}
+                  strokeWidth={selected ? 2.4 : 2}
+                />
+              </View>
+              <AppText
+                numberOfLines={1}
+                style={[layout.tabLabel, selected && layout.tabLabelActive]}
+              >
+                {text[item]}
+              </AppText>
+            </PressableScale>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -146,27 +215,49 @@ export default function HomeScreen() {
 }
 
 const layout = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.subtleBorder,
+    backgroundColor: colors.surface,
+  },
+  brand: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.brandTint,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brandName: { fontFamily: nativeFont.bold, fontSize: 18, lineHeight: 26 },
+  caption: { fontSize: 13, lineHeight: 18 },
+  live: { width: 12, height: 12, borderRadius: 6 },
   navigation: {
-    flexGrow: 0,
+    flexDirection: "row",
     backgroundColor: colors.panel,
     borderTopColor: colors.subtleBorder,
     borderTopWidth: 1,
+    paddingHorizontal: spacing.xs,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
   },
-  tabs: {
-    flexGrow: 1,
-    justifyContent: "space-evenly",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  tab: { flex: 1, alignItems: "center", gap: 2, minHeight: 52 },
+  tabIcon: { width: 56, height: 32, alignItems: "center", justifyContent: "center" },
+  tabPill: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    start: 0,
+    end: 0,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSoft,
   },
-  tab: {
-    minHeight: 48,
-    minWidth: 48,
-    paddingHorizontal: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-  },
+  tabLabel: { fontSize: 12, lineHeight: 16, color: colors.mutedInk },
+  tabLabelActive: { color: colors.brandText, fontFamily: nativeFont.bold },
   offline: {
     paddingHorizontal: 16,
     paddingVertical: 8,

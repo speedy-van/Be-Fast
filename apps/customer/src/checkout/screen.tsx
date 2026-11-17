@@ -11,7 +11,9 @@ import {
 import { calcItemTotal, calcOrderTotals, formatMoney } from "@be-fast/domain";
 import { customerApp as text, messages } from "@be-fast/i18n";
 import { useRef, useState } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { Icon } from "@be-fast/ui-native";
+import { colors, radius, spacing } from "@be-fast/ui-tokens";
 import { serviceError, type CustomerRequest } from "../api";
 import { usePublicQuery } from "../catalog/query";
 import type { Cart, Region } from "../catalog/types";
@@ -19,9 +21,14 @@ import type { CheckoutAttempt } from "../store";
 import {
   AppText,
   Button,
+  Card,
   Choices,
+  Divider,
   Field,
+  InfoRow,
+  ScreenHeader,
   ScrollScreen,
+  SectionTitle,
   Status,
   styles,
 } from "../ui";
@@ -53,8 +60,8 @@ interface CheckoutProps {
 }
 
 const methods = [
-  { id: "DELIVERY", label: text.delivery },
-  { id: "PICKUP", label: text.pickup },
+  { id: "DELIVERY", label: text.delivery, icon: "scooter" },
+  { id: "PICKUP", label: text.pickup, icon: "store" },
 ] as const;
 const priceRows = [
   ["foodSubtotalMinor", text.foodSubtotal],
@@ -267,49 +274,130 @@ export function CheckoutScreen({
   }
 
   const promptForName = profile && !profile.name;
+  const showConfirm = (!login || profile) && !promptForName;
   return (
-    <ScrollScreen>
-      <Button label={text.back} onPress={onBack} disabled={busy} />
-      <AppText title>{text.checkout}</AppText>
-      <Choices
-        label={text.type}
-        selected={type}
-        values={cart.pickupEnabled ? methods : methods.slice(0, 1)}
-        onSelect={setType}
-        disabled={locked}
-      />
-      {type === "DELIVERY" && (
-        <View style={styles.field}>
-          <AppText>{address?.label ?? address?.street ?? text.address}</AppText>
-          {profile && (
+    <ScrollScreen
+      footer={
+        showConfirm ? (
+          <>
+            <InfoRow
+              label={text.total}
+              value={formatMoney(amounts.totalMinor, displayMode)}
+              strong
+            />
             <Button
-              label={text.selectAddress}
-              onPress={onAddresses}
-              disabled={locked}
+              testID="checkout-confirm"
+              label={attempt.priceChange ? text.confirmPrice : text.confirm}
+              onPress={confirm}
+              primary
+              icon="check"
+              disabled={busy || (!canQuote && !attempt.body)}
             />
-          )}
-          {!canQuote && (
-            <Status
-              busy={quote.isFetching}
-              error={quote.isError ? text.blockedOutsideArea : undefined}
-              retry={() => void quote.refetch()}
-            />
-          )}
-        </View>
-      )}
-      <View style={styles.card}>
-        {priceRows.map(([field, label]) => (
-          <AppText key={field}>
-            {label} · {formatMoney(amounts[field], displayMode)}
-          </AppText>
+          </>
+        ) : undefined
+      }
+    >
+      <ScreenHeader
+        title={text.checkout}
+        subtitle={cart.restaurantName}
+        onBack={onBack}
+        backDisabled={busy}
+      />
+      <Card>
+        <Choices
+          label={text.type}
+          selected={type}
+          values={cart.pickupEnabled ? methods : methods.slice(0, 1)}
+          onSelect={setType}
+          disabled={locked}
+        />
+        {type === "DELIVERY" && (
+          <View style={styles.field}>
+            <Divider />
+            <View style={styles.inline}>
+              <View style={local.addressIcon}>
+                <Icon name="pin" size={20} color={colors.brandText} />
+              </View>
+              <View style={styles.flex}>
+                <AppText variant="small" muted>
+                  {text.deliveryAddress}
+                </AppText>
+                <AppText weight="semibold" numberOfLines={2}>
+                  {address?.label ?? address?.street ?? text.address}
+                </AppText>
+              </View>
+              {profile && (
+                <Button
+                  label={address ? text.change : text.selectAddress}
+                  onPress={onAddresses}
+                  disabled={locked}
+                  variant="soft"
+                  compact
+                />
+              )}
+            </View>
+            {!canQuote && (
+              <Status
+                busy={quote.isFetching}
+                error={quote.isError ? text.blockedOutsideArea : undefined}
+                retry={() => void quote.refetch()}
+              />
+            )}
+          </View>
+        )}
+      </Card>
+      <Card>
+        <SectionTitle title={text.orderSummary} icon="receipt" />
+        {cart.items.map((line) => (
+          <View key={line.key} style={local.line}>
+            <View style={local.qty}>
+              <AppText variant="small" weight="bold" tone="brand">
+                {line.quantity}×
+              </AppText>
+            </View>
+            <AppText style={styles.flex} numberOfLines={1}>
+              {line.name}
+            </AppText>
+          </View>
         ))}
-        <AppText title testID="checkout-total">
-          {text.total} · {formatMoney(amounts.totalMinor, displayMode)}
-        </AppText>
-        <AppText>{text.cash}</AppText>
-      </View>
+        <Divider />
+        {priceRows.map(([field, label]) => (
+          <InfoRow
+            key={field}
+            label={label}
+            value={formatMoney(amounts[field], displayMode)}
+          />
+        ))}
+        <Divider />
+        <View style={local.total}>
+          <AppText variant="title">{text.total}</AppText>
+          <AppText
+            variant="title"
+            weight="bold"
+            tone="brand"
+            testID="checkout-total"
+            style={styles.numeric}
+          >
+            {formatMoney(amounts.totalMinor, displayMode)}
+          </AppText>
+        </View>
+      </Card>
+      <Card tone="success">
+        <View style={styles.inline}>
+          <Icon name="cash" size={24} color={colors.success} />
+          <View style={styles.flex}>
+            <AppText weight="bold" tone="success">
+              {text.cash}
+            </AppText>
+            <AppText variant="small" muted>
+              {text.cashHint}
+            </AppText>
+          </View>
+        </View>
+      </Card>
       <Field
         label={text.note}
+        icon="note"
         value={note}
         onChangeText={setNote}
         maxLength={300}
@@ -317,9 +405,14 @@ export function CheckoutScreen({
         multiline
       />
       {!profile && login && (
-        <View style={styles.card}>
+        <Card tone="tint">
+          <SectionTitle title={text.verifyTitle} icon="phone" />
+          <AppText variant="small" muted>
+            {text.verifyHint}
+          </AppText>
           <Field
             label={text.phone}
+            icon="phone"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
@@ -343,7 +436,7 @@ export function CheckoutScreen({
                 keyboardType="number-pad"
                 autoComplete="sms-otp"
                 maxLength={6}
-                style={styles.numeric}
+                style={[styles.numeric, local.otp]}
                 editable={!busy}
               />
               <Button
@@ -356,14 +449,15 @@ export function CheckoutScreen({
                 label={text.retry}
                 onPress={() => setLogin("phone")}
                 disabled={busy}
+                variant="ghost"
               />
             </>
           )}
-        </View>
+        </Card>
       )}
       {promptForName && (
-        <View style={styles.card}>
-          <AppText>{text.namePrompt}</AppText>
+        <Card tone="tint">
+          <SectionTitle title={text.namePrompt} icon="user" />
           <Field
             label={text.name}
             value={name}
@@ -377,7 +471,7 @@ export function CheckoutScreen({
             disabled={busy}
             primary
           />
-        </View>
+        </Card>
       )}
       <Status
         busy={busy}
@@ -391,20 +485,39 @@ export function CheckoutScreen({
         error={error}
       />
       {attempt.uncertain && !busy && (
-        <>
-          <AppText accessibilityLiveRegion="polite">{text.uncertain}</AppText>
-          <Button label={text.checkOrders} onPress={onOrders} />
-        </>
-      )}
-      {(!login || profile) && !promptForName && (
-        <Button
-          testID="checkout-confirm"
-          label={attempt.priceChange ? text.confirmPrice : text.confirm}
-          onPress={confirm}
-          primary
-          disabled={busy || (!canQuote && !attempt.body)}
-        />
+        <Card tone="warning">
+          <AppText accessibilityLiveRegion="polite" tone="warning">
+            {text.uncertain}
+          </AppText>
+          <Button label={text.checkOrders} onPress={onOrders} icon="receipt" />
+        </Card>
       )}
     </ScrollScreen>
   );
 }
+
+const local = StyleSheet.create({
+  addressIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandTint,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  line: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  qty: {
+    minWidth: 34,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: colors.brandTint,
+    alignItems: "center",
+  },
+  total: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  otp: { fontSize: 22, letterSpacing: 8 },
+});

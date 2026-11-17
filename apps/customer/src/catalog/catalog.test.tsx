@@ -2,6 +2,8 @@ import { ApiClientError, type ResponseSchema } from "@be-fast/api-client";
 import type { BrowseListPage } from "@be-fast/contracts";
 import { calcItemTotal, formatMoney } from "@be-fast/domain";
 import { customerCatalog as text } from "@be-fast/i18n";
+import { GradientFill } from "@be-fast/ui-native";
+import { gradients } from "@be-fast/ui-tokens";
 import {
   QueryClient,
   QueryClientProvider,
@@ -12,10 +14,11 @@ import type { ReactElement, ReactNode } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { CustomerRequestOptions } from "../api";
-import { AppText } from "../ui";
+import { AppText, Button, Choices } from "../ui";
 import { BrowseScreen, browsePath } from "./browse";
-import { ItemCustomizer, type CatalogItem } from "./item";
+import { ItemCustomizer, QuantityControls, type CatalogItem } from "./item";
 import { useRestaurantMenu } from "./menu";
+import { CatalogButton } from "./shared";
 import type { Region } from "./types";
 
 vi.mock("expo-image", () => ({ Image: "Image" }));
@@ -199,6 +202,41 @@ function press(tree: ReactTestRenderer, testID: string) {
 
 const noOp = () => undefined;
 
+it("keeps catalog actions and compact controls at least 48dp across", async () => {
+  const tree = await mount(
+    <>
+      <Button compact label={text.back} testID="compact-action" onPress={noOp} />
+      <CatalogButton
+        label={text.allCategories}
+        testID="catalog-action"
+        onPress={noOp}
+      />
+      <Choices
+        label={text.quantity}
+        selected="one"
+        values={[{ id: "one", label: text.quantity }]}
+        onSelect={noOp}
+      />
+      <QuantityControls compact quantity={2} onChange={noOp} />
+    </>,
+  );
+
+  const segment = tree.root.find(
+    (node) =>
+      typeof node.type === "string" && node.props.accessibilityRole === "radio",
+  );
+  for (const control of [host(tree, "compact-action"), host(tree, "catalog-action"), segment]) {
+    expect(Object.assign({}, ...[control.props.style as unknown].flat(3))).toMatchObject(
+      { minWidth: 48, minHeight: 48 },
+    );
+  }
+  for (const id of ["quantity-plus", "quantity-minus"]) {
+    expect([host(tree, id).props.style as unknown].flat(3)).toContainEqual(
+      expect.objectContaining({ width: 48, height: 48 }),
+    );
+  }
+});
+
 it("enables Add to Cart only while the required group is satisfied", async () => {
   const add = vi.fn();
   const tree = await mount(
@@ -316,6 +354,37 @@ function queryClient() {
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
 }
+
+it("uses the contrast-tested hero gradient and 48dp search control", async () => {
+  const client = queryClient();
+  const online = customerMock((path) =>
+    path === "/public/categories" ? [] : page,
+  );
+  const tree = await mount(
+    <QueryClientProvider client={client}>
+      <BrowseScreen
+        region={region}
+        request={online.request}
+        onChooseRegion={noOp}
+        onOpenCart={noOp}
+        onOpenRestaurant={noOp}
+      />
+    </QueryClientProvider>,
+  );
+  const hero = tree.root
+    .findAllByType(GradientFill)
+    .find(({ props }) => props.id === "hero");
+  expect(hero?.props).toMatchObject({
+    from: gradients.brand[0],
+    to: gradients.brand[1],
+  });
+  const search = tree.root.find(
+    (node) => typeof node.type === "string" && node.props.accessibilityLabel === text.applySearch,
+  );
+  expect([search.props.style as unknown].flat(3)).toContainEqual(
+    expect.objectContaining({ width: 48, height: 48 }),
+  );
+});
 
 it("keeps the last browse result after restart and labels it stale when the network refresh fails", async () => {
   const online = customerMock((path) =>

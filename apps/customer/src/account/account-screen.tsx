@@ -1,10 +1,21 @@
 import type { customerProfileSchema } from "@be-fast/contracts";
 import { customerAccountText as text } from "@be-fast/i18n";
 import { useRef, useState } from "react";
-import { Alert, View } from "react-native";
+import { GradientFill, Icon } from "@be-fast/ui-native";
+import { colors, radius, spacing } from "@be-fast/ui-tokens";
+import { Alert, StyleSheet, View } from "react-native";
 import type { z } from "zod";
 import { serviceError, type CustomerRequest } from "../api";
-import { AppText, Button, ScrollScreen, Status, styles } from "../ui";
+import {
+  AppText,
+  Button,
+  Card,
+  Divider,
+  ScreenHeader,
+  ScrollScreen,
+  Status,
+  styles,
+} from "../ui";
 
 export type CustomerProfile = z.infer<typeof customerProfileSchema>;
 
@@ -57,37 +68,81 @@ export function AccountScreen({
     ]);
   }
 
+  const initial = profile.name?.trim().charAt(0) ?? "";
   return (
     <ScrollScreen>
-      <AppText title accessibilityRole="header">
-        {text.account}
-      </AppText>
-      <View style={styles.card}>
-        {profile.name && (
-          <>
-            <AppText muted>{text.name}</AppText>
-            <AppText>{profile.name}</AppText>
-          </>
-        )}
-        {profile.phone && (
-          <>
-            <AppText muted>{text.phone}</AppText>
-            <AppText style={styles.numeric}>{profile.phone}</AppText>
-          </>
-        )}
-        <Button label={text.addresses} disabled={busy} onPress={onAddresses} />
+      <ScreenHeader title={text.account} />
+      <Card style={local.profile}>
+        <View style={local.avatar}>
+          <GradientFill from={colors.brand} to={colors.brandDeep} id="avatar" />
+          {initial ? (
+            <AppText variant="headline" tone="onBrand">
+              {initial}
+            </AppText>
+          ) : (
+            <Icon name="user" size={30} color={colors.onBrand} />
+          )}
+        </View>
+        <View style={styles.flex}>
+          {profile.name && (
+            <>
+              <AppText variant="caption" muted>
+                {text.name}
+              </AppText>
+              <AppText variant="title">{profile.name}</AppText>
+            </>
+          )}
+          {profile.phone && (
+            <>
+              <AppText variant="caption" muted>
+                {text.phone}
+              </AppText>
+              <AppText weight="semibold" style={styles.numeric}>
+                {profile.phone}
+              </AppText>
+            </>
+          )}
+        </View>
+      </Card>
+      <Card style={local.menu}>
+        <Button
+          label={text.addresses}
+          icon="pin"
+          variant="ghost"
+          disabled={busy}
+          onPress={onAddresses}
+          trailing={<Icon name="forward" size={18} color={colors.mutedInk} />}
+        />
+        <Divider />
         <Button
           label={text.signOut}
+          icon="logout"
+          variant="ghost"
           disabled={busy}
           onPress={() => void run(onSignOut)}
         />
-        <Button
-          label={text.deleteAccount}
-          disabled={busy}
-          onPress={confirmDeletion}
-        />
-        <Status busy={busy} error={error} />
-      </View>
+      </Card>
+      <Button
+        label={text.deleteAccount}
+        icon="trash"
+        variant="danger"
+        disabled={busy}
+        onPress={confirmDeletion}
+      />
+      <Status busy={busy} error={error} />
     </ScrollScreen>
   );
 }
+
+const local = StyleSheet.create({
+  profile: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
+  avatar: {
+    width: 68,
+    height: 68,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  menu: { paddingVertical: spacing.xs, gap: 0 },
+});

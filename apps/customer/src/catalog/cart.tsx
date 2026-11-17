@@ -1,9 +1,20 @@
 import { calcItemTotal, calcOrderTotals, formatMoney } from "@be-fast/domain";
 import { customerCatalog as text, messages } from "@be-fast/i18n";
-import { ScrollView, View } from "react-native";
-import { AppText } from "../ui";
+import { enterUp, Icon } from "@be-fast/ui-native";
+import { colors, radius, spacing } from "@be-fast/ui-tokens";
+import { StyleSheet, View } from "react-native";
+import Animated, { LinearTransition } from "react-native-reanimated";
+import {
+  AppText,
+  Button,
+  Card,
+  EmptyState,
+  IconButton,
+  InfoRow,
+  ScreenHeader,
+  ScrollScreen,
+} from "../ui";
 import { QuantityControls } from "./item";
-import { CatalogButton, catalogStyles as styles } from "./shared";
 import type { Cart, CartLine } from "./types";
 
 function lineTotal(line: CartLine) {
@@ -19,7 +30,7 @@ function lineTotal(line: CartLine) {
   }
 }
 
-function foodSubtotal(lines: readonly CartLine[]) {
+export function foodSubtotal(lines: readonly CartLine[]) {
   const lineTotals = lines.map(lineTotal);
   if (lineTotals.some((total) => total === undefined)) return undefined;
   try {
@@ -49,6 +60,7 @@ export function CartScreen({
 }) {
   const mode = cart?.currencyDisplayMode ?? "OLD";
   const subtotal = foodSubtotal(cart?.items ?? []);
+  const count = cart?.items.reduce((sum, line) => sum + line.quantity, 0) ?? 0;
 
   function changeLine(key: string, quantity?: number) {
     if (!cart || checkoutLocked) return;
@@ -62,70 +74,134 @@ export function CartScreen({
     onChangeCart(items.length ? { ...cart, items } : null);
   }
 
+  if (!cart || cart.items.length === 0)
+    return (
+      <ScrollScreen>
+        <ScreenHeader title={text.cartTitle} />
+        <EmptyState
+          icon="bag"
+          title={text.emptyCart}
+          message={text.emptyCartHint}
+          action={<Button label={text.browse} onPress={onBrowse} primary icon="store" />}
+        />
+      </ScrollScreen>
+    );
+
+  const belowMinimum = subtotal !== undefined && subtotal < cart.minOrderMinor;
   return (
-    <ScrollView
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      <AppText title accessibilityRole="header">
-        {text.cartTitle}
-      </AppText>
-      {cart && cart.items.length > 0 ? (
+    <ScrollScreen
+      footer={
         <>
-          <AppText muted>{cart.restaurantName}</AppText>
-          {cart.items.map((line) => {
-            const price = lineTotal(line);
-            return (
-              <View key={line.key} style={styles.card}>
-                <AppText title style={styles.heading}>
-                  {line.name}
-                </AppText>
-                {line.sizeName !== messages.menu.regularSize && (
-                  <AppText muted>{line.sizeName}</AppText>
-                )}
-                {line.optionNames.length > 0 && (
-                  <AppText muted>{line.optionNames.join(" · ")}</AppText>
-                )}
-                {line.note && <AppText>{line.note}</AppText>}
-                <AppText>
-                  {price === undefined
-                    ? text.priceUnavailable
-                    : formatMoney(price, mode)}
-                </AppText>
-                {!checkoutLocked && (
-                  <>
-                    <QuantityControls
-                      quantity={line.quantity}
-                      onChange={(quantity) => changeLine(line.key, quantity)}
-                    />
-                    <CatalogButton
-                      label={text.remove}
-                      onPress={() => changeLine(line.key)}
-                    />
-                  </>
-                )}
-              </View>
-            );
-          })}
-          <View style={styles.spread}>
-            <AppText>{text.subtotal}</AppText>
-            <AppText style={styles.amount}>
-              {subtotal === undefined
+          <InfoRow
+            label={text.subtotal}
+            value={
+              subtotal === undefined
                 ? text.priceUnavailable
-                : formatMoney(subtotal, mode)}
-            </AppText>
-          </View>
-          <CatalogButton
+                : formatMoney(subtotal, mode)
+            }
+            strong
+          />
+          <Button
             label={text.continueToCheckout}
             primary
+            icon="forward"
             disabled={subtotal === undefined}
             onPress={onCheckout}
           />
         </>
-      ) : (
-        <AppText muted>{text.emptyCart}</AppText>
+      }
+    >
+      <ScreenHeader
+        title={text.cartTitle}
+        subtitle={`${cart.restaurantName} · ${count} ${text.itemsCount}`}
+      />
+      {cart.items.map((line, index) => {
+        const price = lineTotal(line);
+        return (
+          <Animated.View
+            key={line.key}
+            entering={enterUp(index)}
+            layout={LinearTransition.springify().damping(18)}
+          >
+            <Card style={styles.line}>
+              <View style={styles.lineTop}>
+                <View style={styles.flex}>
+                  <AppText variant="title">{line.name}</AppText>
+                  {line.sizeName !== messages.menu.regularSize && (
+                    <AppText variant="small" muted>
+                      {line.sizeName}
+                    </AppText>
+                  )}
+                  {line.optionNames.length > 0 && (
+                    <AppText variant="small" muted>
+                      {line.optionNames.join(" · ")}
+                    </AppText>
+                  )}
+                  {line.note && (
+                    <View style={styles.note}>
+                      <Icon name="note" size={14} color={colors.mutedInk} />
+                      <AppText variant="small" muted style={styles.flex}>
+                        {line.note}
+                      </AppText>
+                    </View>
+                  )}
+                </View>
+                {!checkoutLocked && (
+                  <IconButton
+                    icon="trash"
+                    label={text.remove}
+                    onPress={() => changeLine(line.key)}
+                  />
+                )}
+              </View>
+              <View style={styles.lineBottom}>
+                {!checkoutLocked ? (
+                  <QuantityControls
+                    compact
+                    quantity={line.quantity}
+                    onChange={(quantity) => changeLine(line.key, quantity)}
+                  />
+                ) : (
+                  <AppText muted>× {line.quantity}</AppText>
+                )}
+                <AppText weight="bold" tone="brand" style={styles.numeric}>
+                  {price === undefined
+                    ? text.priceUnavailable
+                    : formatMoney(price, mode)}
+                </AppText>
+              </View>
+            </Card>
+          </Animated.View>
+        );
+      })}
+      {belowMinimum && (
+        <Card tone="warning">
+          <View style={styles.note}>
+            <Icon name="info" size={20} color={colors.warning} />
+            <AppText tone="warning" style={styles.flex}>
+              {text.minimum} {formatMoney(cart.minOrderMinor, mode)}
+            </AppText>
+          </View>
+        </Card>
       )}
-      <CatalogButton label={text.browse} onPress={onBrowse} />
-    </ScrollView>
+      <Button label={text.addMore} onPress={onBrowse} variant="soft" icon="plus" />
+    </ScrollScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  line: { gap: spacing.md },
+  lineTop: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
+  lineBottom: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: colors.subtleBorder,
+    paddingTop: spacing.md,
+    borderRadius: radius.sm,
+  },
+  note: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  numeric: { writingDirection: "ltr" },
+});
