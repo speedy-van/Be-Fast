@@ -1,3 +1,5 @@
+# Optional local PostgreSQL and MinIO stack for machines with Docker.
+# The standard development and test workflow uses Neon and does not use Compose.
 name: be-fast
 
 services:

@@ -6,8 +6,8 @@ export function createApi(databaseUrl: string) {
   const api = Fastify();
   const pool = new Pool({
     connectionString: databaseUrl,
-    connectionTimeoutMillis: 2_000,
-    query_timeout: 2_000,
+    connectionTimeoutMillis: 5_000,
+    query_timeout: 5_000,
   });
 
   pool.on("error", () => {
