@@ -46,6 +46,14 @@ corepack pnpm --filter admin dev --hostname 127.0.0.1
 | `ADMIN_TRUST_LOCAL_PROXY`                            | يُضبط على `1` في عملية اللوحة خلف وسيط محلي يكتب رأس عنوان العميل كما هو موضّح أدناه.                                   |
 | `EXPO_PUBLIC_API_ORIGIN`                             | قاعدة عنوان API وقت بناء تطبيق Android، افتراضياً `http://10.0.2.2:3001` للمحاكي. يدخل المتغير في حزمة التطبيق.        |
 
+## التحقق على GitHub
+
+يشغّل سير العمل `CI` أوامر التثبيت المقفل و`lint` و`typecheck` و`build` عند الدفع إلى `main` أو فتح طلب دمج يستهدفه. يقرأ إصدار Node من `.nvmrc`.
+
+لتفعيل `test`، يفتح المالك إعدادات المستودع على GitHub ويختار **Settings → Secrets and variables → Actions → New repository secret**. اسم السر `TEST_DATABASE_URL` وقيمته رابط PostgreSQL المباشر لفرع Neon المخصّص للاختبار، مع `sslmode=verify-full`. يتاح السر لخطوة الاختبار فقط. اترك `DATABASE_URL` خارج GitHub Actions. [إضافة أسرار GitHub Actions](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
+
+إذا لم يتوفّر السر، كما في طلبات الدمج من مستودعات متفرعة، تسجّل خطوة الاختبار سبب التخطّي وتتابع بقية الفحوص. راجع تبويب **Actions** وسجل خطوة **Test** للتحقق من تشغيل الاختبارات فعلاً.
+
 ## إنشاء أول مدير
 
 زوّد عملية التهيئة بـ`ADMIN_EMAIL` وكلمة مرور بطول 8 أحرف على الأقل و`ADMIN_TOTP_SECRET` بترميز Base32 لسر بطول 16 بايت على الأقل. أدخل السر نفسه في تطبيق المصادقة واضبط ساعة الجهاز. نفّذ الأمر التالي ثم أزل اعتماد التهيئة من بيئة العملية. تدخل لوحة الإدارة بالبريد وكلمة المرور ورمز TOTP.

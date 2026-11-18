@@ -2,8 +2,7 @@ node_modules/
 .turbo/
 .next/
 .expo/
-apps/customer/android/
-apps/restaurant/android/
+apps/*/android/
 .android-gradle/
 next-env.d.ts
 dist/
@@ -13,7 +12,8 @@ test-results/
 apps/api/src/generated/prisma/
 *.tsbuildinfo
 *.log
+*.jks
+*.keystore
 
-.env
-.env.*
+.env*
 !.env.example
