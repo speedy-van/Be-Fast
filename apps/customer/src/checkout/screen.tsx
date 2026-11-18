@@ -14,6 +14,7 @@ import { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Icon } from "@be-fast/ui-native";
 import { colors, radius, spacing } from "@be-fast/ui-tokens";
+import { useAndroidBack } from "../android-back";
 import { serviceError, type CustomerRequest } from "../api";
 import { usePublicQuery } from "../catalog/query";
 import type { Cart, Region } from "../catalog/types";
@@ -96,6 +97,19 @@ export function CheckoutScreen({
   const [error, setError] = useState<string>();
   const busyRef = useRef(false);
   const verifiedPair = useRef<AuthTokens | null>(null);
+  useAndroidBack(() => {
+    if (busyRef.current) return;
+    if (!profile && login === "code") {
+      setCode("");
+      setError(undefined);
+      setLogin("phone");
+    } else if (!profile && login === "phone") {
+      setError(undefined);
+      setLogin(null);
+    } else {
+      onBack();
+    }
+  });
   const displayAddress = type === "DELIVERY" ? address : undefined;
   const zone = displayAddress?.neighborhoodId ?? region.neighborhoodId;
   const quote = usePublicQuery(

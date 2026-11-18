@@ -8,10 +8,18 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { CustomerRequestOptions } from "../api";
 import type { Cart, Region } from "../catalog/types";
 import type { CheckoutAttempt } from "../store";
-import { AppText, Button } from "../ui";
+import { AppText, Button, Field } from "../ui";
 import { CheckoutScreen } from "./screen";
 
+const addBackListener = vi.hoisted(() =>
+  vi.fn<(
+    event: "hardwareBackPress",
+    handle: () => boolean,
+  ) => { remove: () => void }>(() => ({ remove: vi.fn() })),
+);
 vi.mock("react-native", () => ({
+  BackHandler: { addEventListener: addBackListener },
+  Platform: { OS: "android" },
   View: "View",
   Text: "Text",
   Pressable: "Pressable",
@@ -154,6 +162,38 @@ async function mount(
   if (!renderer) throw new Error("Checkout did not mount.");
   return { root: renderer.root, onCreated, onOrders };
 }
+
+it("uses Android Back to return from the OTP code to phone entry before leaving checkout", async () => {
+  const onBack = vi.fn();
+  const request = createRequest(async () => undefined);
+  const { root } = await mount(request, { onBack, profile: null, publicRequest: request });
+  const field = (label: string) =>
+    root.findAllByType(Field).find((node) => node.props.label === label);
+  async function pressButton(label: string) {
+    const button = root.findAllByType(Button).find((node) => node.props.label === label);
+    if (!button) throw new Error("Expected checkout button.");
+    await act(async () => button.props.onPress());
+  }
+  async function pressAndroidBack() {
+    const handle = addBackListener.mock.lastCall?.[1];
+    if (!handle) throw new Error("Android Back listener is missing.");
+    await act(async () => expect(handle()).toBe(true));
+  }
+  await pressButton(text.confirm);
+  const phone = field(text.phone);
+  if (!phone) throw new Error("Expected phone field.");
+  await act(async () => phone.props.onChangeText("0912345678"));
+  await pressButton(text.sendCode);
+  expect(field(text.otp)).toBeDefined();
+  await pressAndroidBack();
+  expect(field(text.otp)).toBeUndefined();
+  expect(field(text.phone)?.props.editable).toBe(true);
+  await pressAndroidBack();
+  expect(field(text.phone)).toBeUndefined();
+  expect(onBack).not.toHaveBeenCalled();
+  await pressAndroidBack();
+  expect(onBack).toHaveBeenCalledOnce();
+});
 
 it("keeps the request key while offline, prevents a double tap, and offers order history without success", async () => {
   const send = vi

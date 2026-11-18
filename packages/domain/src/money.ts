@@ -107,12 +107,13 @@ export function formatMoney(
 ): string {
   assertSafeMinor(amountMinor);
   if (displayMode === "OLD") {
-    return `${wholeNumber.format(BigInt(amountMinor))} ل.س`;
+    return `${wholeNumber.format(amountMinor === 0 ? 0 : amountMinor)} ل.س`;
   }
 
   const sign = amountMinor < 0 ? "-" : "";
   const magnitude = BigInt(Math.abs(amountMinor));
-  const liras = wholeNumber.format(magnitude / minorPerNewLira);
+  // Hermes Intl only accepts Numbers. The integer quotient is within the safe range.
+  const liras = wholeNumber.format(Number(magnitude / minorPerNewLira));
   const remainder = magnitude % minorPerNewLira;
   const fraction =
     remainder === 0n ? "" : `.${remainder.toString().padStart(2, "0")}`;

@@ -5,6 +5,7 @@ import { colors, gradients, radius, spacing } from "@be-fast/ui-tokens";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
+import { useAndroidBack } from "../android-back";
 import type { CustomerRequest } from "../api";
 import { AppText, Button, IconButton } from "../ui";
 import { usePublicQuery } from "./query";
@@ -96,6 +97,7 @@ export function RegionPicker({
   const neighborhood = city?.neighborhoods.find(
     ({ id }) => id === neighborhoodId,
   );
+  useAndroidBack(onCancel);
 
   function confirm() {
     if (!governorate || !city || !neighborhood) return;

@@ -8,6 +8,7 @@ import * as Location from "expo-location";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Modal, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAndroidBack } from "../android-back";
 import type { z } from "zod";
 import { serviceError, type CustomerRequest } from "../api";
 import { RegionPicker } from "../catalog/region";
@@ -224,6 +225,15 @@ export function AddressScreen({
   const [editing, setEditing] = useState<CustomerAddress | null>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  function closeEditor() {
+    setError(undefined);
+    setEditing(undefined);
+  }
+  useAndroidBack(() => {
+    if (acting.current) return;
+    if (editing === undefined) onBack();
+    else closeEditor();
+  });
   useEffect(() => {
     updateAddressList.current = onUpdateAddresses;
   }, [onUpdateAddresses]);
@@ -375,10 +385,7 @@ export function AddressScreen({
           existing={editing ?? undefined}
           busy={busy}
           onSave={save}
-          onBack={() => {
-            setError(undefined);
-            setEditing(undefined);
-          }}
+          onBack={closeEditor}
         />
       )}
       <Status busy={busy} error={error} />

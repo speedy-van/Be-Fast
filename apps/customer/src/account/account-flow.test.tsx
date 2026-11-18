@@ -12,11 +12,17 @@ const fixture = vi.hoisted(() => ({
   alert: vi.fn(),
   permission: vi.fn(),
   location: vi.fn(),
+  addBackListener: vi.fn<(
+    event: "hardwareBackPress",
+    handle: () => boolean,
+  ) => { remove: () => void }>(() => ({ remove: vi.fn() })),
 }));
 vi.mock("react-native", () => ({
   Alert: { alert: fixture.alert },
   ActivityIndicator: "ActivityIndicator",
+  BackHandler: { addEventListener: fixture.addBackListener },
   Modal: "Modal",
+  Platform: { OS: "android" },
   Pressable: "Pressable",
   ScrollView: "ScrollView",
   StyleSheet: { create: <T,>(styles: T) => styles },
@@ -171,4 +177,30 @@ it("requests GPS only on explicit action and sends coordinates only after permis
     },
     expect.anything(),
   );
+});
+
+it("closes the editor before Android Back leaves the address list", async () => {
+  const leave = vi.fn();
+  const tree = await mount(
+    <AddressScreen
+      request={vi.fn().mockResolvedValue([]) as CustomerRequest}
+      region={region}
+      addresses={[]}
+      onUpdateAddresses={vi.fn()}
+      onSelect={vi.fn()}
+      onBack={leave}
+    />,
+  );
+  async function pressAndroidBack() {
+    const handle = fixture.addBackListener.mock.lastCall?.[1];
+    if (!handle) throw new Error("Android Back listener is missing.");
+    await act(async () => expect(handle()).toBe(true));
+  }
+  await press(tree, text.addAddress);
+  await pressAndroidBack();
+  expect(leave).not.toHaveBeenCalled();
+  await press(tree, text.addAddress);
+  await pressAndroidBack();
+  await pressAndroidBack();
+  expect(leave).toHaveBeenCalledOnce();
 });

@@ -42,9 +42,11 @@ function isConnected(state: NetworkState) {
 export function RestaurantOrders({
   visible = true,
   onConnectionChange,
+  onBackFromList,
 }: {
   visible?: boolean;
   onConnectionChange?: (connection: OrderConnection) => void;
+  onBackFromList?: () => void;
 }) {
   const session = useRestaurantSession();
   const [foreground, setForeground] = useState(
@@ -91,6 +93,7 @@ export function RestaurantOrders({
         connected={connected}
         visible={visible}
         onConnectionChange={onConnectionChange}
+        onBackFromList={onBackFromList}
         request={session.request}
         alert={<OrderAlert />}
       />

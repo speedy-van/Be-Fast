@@ -20,6 +20,8 @@ import { Choices } from "../ui";
 import { OrderConsole } from "./console";
 import { OrderDetail, responseCountdown } from "./view";
 
+const nativeBackListeners = vi.hoisted(() => new Set<() => boolean>());
+
 vi.mock("react-native", async () => {
   const { createElement, Fragment } =
     await vi.importActual<typeof import("react")>("react");
@@ -31,6 +33,12 @@ vi.mock("react-native", async () => {
     Switch: "Switch",
     TextInput: "TextInput",
     ActivityIndicator: "ActivityIndicator",
+    BackHandler: {
+      addEventListener: (_type: "hardwareBackPress", listener: () => boolean) => {
+        nativeBackListeners.add(listener);
+        return { remove: () => nativeBackListeners.delete(listener) };
+      },
+    },
     Linking: { openURL: vi.fn() },
     StyleSheet: { create: <T,>(styles: T) => styles },
     FlatList: ({
@@ -247,6 +255,42 @@ it("never renders phone, address, money or accept/reject for KITCHEN even if pre
   ]) {
     expect(hostById(tree, id)).toHaveLength(1);
   }
+});
+
+it("uses Android Back to close the visible detail before leaving the orders page", async () => {
+  const fixture = restaurantMock((path) =>
+    path.endsWith("/active") ? { orders: [pending] } : pending,
+  );
+  const onBackFromList = vi.fn();
+  const renderConsole = (visible: boolean) => (
+    <OrderConsole
+      {...consoleProps}
+      visible={visible}
+      onBackFromList={onBackFromList}
+      request={fixture.request}
+    />
+  );
+  const nativeBack = () =>
+    Array.from(nativeBackListeners).reverse().some((handler) => handler());
+  const rowID = `order-row-${pending.id}`;
+  const tree = await mount(renderConsole(true));
+  await act(async () => press(hostById(tree, rowID)[0]!));
+  expect(hostById(tree, "transition-ACCEPTED")).toHaveLength(1);
+
+  await act(async () => tree.update(renderConsole(false)));
+  expect(nativeBack()).toBe(false);
+  expect(onBackFromList).not.toHaveBeenCalled();
+
+  await act(async () => tree.update(renderConsole(true)));
+  await act(async () => {
+    expect(nativeBack()).toBe(true);
+  });
+  expect(hostById(tree, "transition-ACCEPTED")).toHaveLength(0);
+  expect(hostById(tree, rowID)).toHaveLength(1);
+  expect(onBackFromList).not.toHaveBeenCalled();
+
+  expect(nativeBack()).toBe(true);
+  expect(onBackFromList).toHaveBeenCalledOnce();
 });
 
 it("shows disconnection after polling fails and clears it at the first successful ten-second poll", async () => {

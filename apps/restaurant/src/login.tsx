@@ -6,10 +6,10 @@ import {
   restaurantRegisterSchema,
 } from "@be-fast/contracts";
 import { messages, restaurantApp as text } from "@be-fast/i18n";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BrandMark } from "@be-fast/ui-native";
 import { darkColors as colors, radius, spacing } from "@be-fast/ui-tokens";
-import { StyleSheet, View } from "react-native";
+import { BackHandler, StyleSheet, View } from "react-native";
 import { sendRestaurantRequest, serviceError } from "./api";
 import { useRestaurantAuth } from "./session";
 import {
@@ -104,14 +104,24 @@ export function LoginScreen() {
     });
   }
 
-  function switchMode(next: Mode) {
+  const switchMode = useCallback((next: Mode) => {
+    if (working.current) return;
     setMode(next);
     setPassword("");
     setCode("");
     setNewPassword("");
     setError(undefined);
     setCodeSent(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    if (mode === "login") return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      switchMode("login");
+      return true;
+    });
+    return () => subscription.remove();
+  }, [mode, switchMode]);
 
   return (
     <ScrollScreen>

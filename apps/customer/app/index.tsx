@@ -15,6 +15,7 @@ import Animated, { ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStore } from "zustand";
 import { AccountScreen, AddressScreen } from "../src/account";
+import { useAndroidBack } from "../src/android-back";
 import { publicRequest } from "../src/api";
 import { CatalogScreen, CartScreen, RegionPicker, summarizeCart } from "../src/catalog";
 import { CheckoutScreen } from "../src/checkout/screen";
@@ -171,6 +172,22 @@ export default function HomeScreen() {
     setScreen(selected);
   }
 
+  let handleBack: (() => void) | undefined;
+  if (session.ready && region) {
+    if (screen === "orders" && selectedOrder)
+      handleBack = () => setSelectedOrder(undefined);
+    else if (
+      screen === "cart" ||
+      screen === "account" ||
+      screen === "orders" ||
+      screen === "created" ||
+      (screen === "checkout" && (!cart || !attempt)) ||
+      (screen === "addresses" && !profile)
+    )
+      handleBack = () => setScreen("home");
+  }
+  useAndroidBack(handleBack);
+
   const signInNotice = (
     <ScrollScreen>
       <EmptyState
@@ -311,17 +328,18 @@ export default function HomeScreen() {
 
   const branded = session.ready && (bodyKey === "home" || bodyKey === "region");
   const activeTab = tabs.find(([id]) => id === screen)?.[0];
+  const showTabs = session.ready && !!region && !!activeTab;
 
   return (
     <SafeAreaView
-      edges={["top"]}
+      edges={["top", "left", "right"]}
       style={[styles.body, branded && { backgroundColor: gradients.brand[0] }]}
     >
       <StatusBar style={branded ? "light" : "dark"} />
-      <View style={styles.body}>
+      <SafeAreaView edges={showTabs ? [] : ["bottom"]} style={styles.body}>
         <ScreenTransition screenKey={bodyKey}>{body}</ScreenTransition>
-      </View>
-      {region && activeTab && (
+      </SafeAreaView>
+      {showTabs && activeTab && (
         <SafeAreaView edges={["bottom"]} style={shell.tabSafe}>
           <TabBar active={activeTab} cartCount={cartCount} onSelect={showTab} />
         </SafeAreaView>
@@ -336,7 +354,7 @@ const shell = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: spacing.sm,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.md,
     backgroundColor: colors.panel,
     borderTopColor: colors.subtleBorder,
     borderTopWidth: 1,

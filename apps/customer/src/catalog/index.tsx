@@ -2,6 +2,7 @@ import type { PublicRestaurantDetailResponse } from "@be-fast/contracts";
 import { formatMoney, validateMenuOptions } from "@be-fast/domain";
 import { customerCatalog as text } from "@be-fast/i18n";
 import { useState } from "react";
+import { useAndroidBack } from "../android-back";
 import { View } from "react-native";
 import type { CustomerRequest } from "../api";
 import { Button, EmptyState, ScrollScreen } from "../ui";
@@ -86,6 +87,13 @@ function RestaurantCatalog({
   const item = restaurant?.sections
     .flatMap(({ items }) => items)
     .find((candidate) => candidate.id === itemId);
+  useAndroidBack(
+    replacement && restaurant
+      ? () => setReplacement(null)
+      : item && restaurant
+        ? () => setItemId(null)
+        : onBack,
+  );
 
   function canSelect(selection: ItemSelection) {
     return (

@@ -18,7 +18,7 @@ import {
 import { enterUp, Icon, PressableScale, Pulse } from "@be-fast/ui-native";
 import { darkColors as colors } from "@be-fast/ui-tokens";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { FlatList, ScrollView, Switch, Text, View } from "react-native";
+import { BackHandler, FlatList, ScrollView, Switch, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import type { RestaurantRequest } from "../api";
 import { useOrderPolling } from "./poll";
@@ -183,6 +183,7 @@ export function OrderConsole({
   connected,
   visible = true,
   onConnectionChange,
+  onBackFromList,
   request,
   alert,
 }: {
@@ -195,12 +196,14 @@ export function OrderConsole({
   connected: boolean;
   visible?: boolean;
   onConnectionChange?: (connection: OrderConnection) => void;
+  onBackFromList?: () => void;
   request: RestaurantRequest;
   alert?: ReactNode;
 }) {
   const [tab, setTab] = useState<Tab>("new");
   const [viewed, setViewed] = useState<ReadonlySet<string>>(() => new Set());
   const [opened, setOpened] = useState<OrderReadResponse | null>(null);
+  const detailOpen = opened !== null;
   const [branchUpdate, setBranchUpdate] = useState<boolean | undefined>();
   const [pauseFailed, setPauseFailed] = useState(false);
   const [pauseSaving, setPauseSaving] = useState(false);
@@ -238,6 +241,15 @@ export function OrderConsole({
   useEffect(() => {
     onConnectionChange?.({ offline: isOffline, lastUpdatedAt });
   }, [isOffline, lastUpdatedAt, onConnectionChange]);
+  useEffect(() => {
+    if (!foreground || !visible || (!detailOpen && !onBackFromList)) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (detailOpen) setOpened(null);
+      else onBackFromList?.();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [detailOpen, foreground, onBackFromList, visible]);
   const isAccepting = branchUpdate ?? acceptingOrders;
   const activeOrders = active.data?.orders ?? [];
   const tabResource = tab === "completed" ? completed : active;

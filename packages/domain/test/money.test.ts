@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   calcCommission,
   calcItemTotal,
@@ -80,6 +80,7 @@ describe("formatMoney", () => {
     [80_050, "NEW", "800.50 ل.س"],
     [100_001, "NEW", "1,000.01 ل.س"],
     [0, "NEW", "0 ل.س"],
+    [-0, "OLD", "0 ل.س"],
     [-80_000, "OLD", "-80,000 ل.س"],
     [-50, "NEW", "-0.50 ل.س"],
     [Number.MAX_SAFE_INTEGER, "NEW", "90,071,992,547,409.91 ل.س"],
@@ -87,6 +88,26 @@ describe("formatMoney", () => {
 
   it.each(examples)("formats %s in %s mode as %s", (amount, mode, expected) => {
     expect(formatMoney(amount, mode)).toBe(expected);
+  });
+
+  it("formats both currency modes on an Intl runtime that rejects BigInt", () => {
+    const format = new Intl.NumberFormat("en-US").format;
+    const numberOnly = vi
+      .spyOn(Intl.NumberFormat.prototype, "format", "get")
+      .mockReturnValue((value) => {
+        if (typeof value !== "number") throw new TypeError("Expected a number");
+        return format(value);
+      });
+    try {
+      expect(formatMoney(Number.MAX_SAFE_INTEGER, "OLD")).toBe(
+        "9,007,199,254,740,991 ل.س",
+      );
+      expect(formatMoney(-Number.MAX_SAFE_INTEGER, "NEW")).toBe(
+        "-90,071,992,547,409.91 ل.س",
+      );
+    } finally {
+      numberOnly.mockRestore();
+    }
   });
 
   it.each([1.5, -1.5, Infinity, Number.MIN_SAFE_INTEGER - 1])(

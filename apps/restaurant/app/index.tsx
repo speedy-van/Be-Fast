@@ -13,8 +13,8 @@ import {
   type IconName,
 } from "@be-fast/ui-native";
 import { darkColors as colors, radius, spacing } from "@be-fast/ui-tokens";
-import { useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BackHandler, StyleSheet, View } from "react-native";
 import Animated, { ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { serviceError } from "../src/api";
@@ -98,17 +98,27 @@ function SettingsScreen() {
 
 function Workspace() {
   const { role, restaurantStatus } = useRestaurantSession();
-  const [selection, select] = useState<Page>(() =>
+  const homePage =
     role === "OWNER" && restaurantStatus !== "APPROVED"
       ? "onboarding"
-      : "orders",
-  );
+      : "orders";
+  const [selection, select] = useState<Page>(homePage);
   const [connection, setConnection] = useState<{
     offline: boolean;
     lastUpdatedAt?: string;
   }>();
   const pages: readonly Page[] = role === "OWNER" ? ownerPages : staffPages;
   const page = pages.includes(selection) ? selection : "orders";
+  const goHome = useCallback(() => select(homePage), [homePage]);
+
+  useEffect(() => {
+    if (page === "orders" || page === homePage) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      goHome();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [goHome, homePage, page]);
 
   return (
     <View style={styles.body}>
@@ -135,6 +145,7 @@ function Workspace() {
         <RestaurantOrders
           visible={page === "orders"}
           onConnectionChange={setConnection}
+          onBackFromList={homePage === "onboarding" ? goHome : undefined}
         />
         {page !== "orders" && connection?.offline && (
           <View style={layout.offline} accessibilityLiveRegion="polite">
@@ -155,43 +166,45 @@ function Workspace() {
           </ScreenTransition>
         )}
       </View>
-      <View style={layout.navigation} accessibilityRole="tablist">
-        {pages.map((item) => {
-          const selected = page === item;
-          return (
-            <PressableScale
-              key={item}
-              accessibilityRole="tab"
-              accessibilityLabel={text[item]}
-              accessibilityState={{ selected }}
-              onPress={() => select(item)}
-              pressedScale={0.9}
-              style={layout.tab}
-            >
-              <View style={layout.tabIcon}>
-                {selected && (
-                  <Animated.View
-                    entering={ZoomIn.springify().damping(14)}
-                    style={layout.tabPill}
-                  />
-                )}
-                <Icon
-                  name={pageIcons[item]}
-                  size={24}
-                  color={selected ? colors.brandText : colors.mutedInk}
-                  strokeWidth={selected ? 2.4 : 2}
-                />
-              </View>
-              <AppText
-                numberOfLines={1}
-                style={[layout.tabLabel, selected && layout.tabLabelActive]}
+      <SafeAreaView edges={["bottom"]} style={layout.navigationSafe}>
+        <View style={layout.navigation} accessibilityRole="tablist">
+          {pages.map((item) => {
+            const selected = page === item;
+            return (
+              <PressableScale
+                key={item}
+                accessibilityRole="tab"
+                accessibilityLabel={text[item]}
+                accessibilityState={{ selected }}
+                onPress={() => select(item)}
+                pressedScale={0.9}
+                style={layout.tab}
               >
-                {text[item]}
-              </AppText>
-            </PressableScale>
-          );
-        })}
-      </View>
+                <View style={layout.tabIcon}>
+                  {selected && (
+                    <Animated.View
+                      entering={ZoomIn.springify().damping(14)}
+                      style={layout.tabPill}
+                    />
+                  )}
+                  <Icon
+                    name={pageIcons[item]}
+                    size={24}
+                    color={selected ? colors.brandText : colors.mutedInk}
+                    strokeWidth={selected ? 2.4 : 2}
+                  />
+                </View>
+                <AppText
+                  numberOfLines={1}
+                  style={[layout.tabLabel, selected && layout.tabLabelActive]}
+                >
+                  {text[item]}
+                </AppText>
+              </PressableScale>
+            );
+          })}
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
@@ -199,7 +212,10 @@ function Workspace() {
 export default function HomeScreen() {
   const { state, restore } = useRestaurantAuth();
   return (
-    <SafeAreaView style={styles.body}>
+    <SafeAreaView
+      edges={state.phase === "ready" ? ["top", "left", "right"] : undefined}
+      style={styles.body}
+    >
       {state.phase === "anonymous" && <LoginScreen />}
       {state.phase === "ready" && (
         <Workspace key={state.credentials.restaurantId} />
@@ -236,14 +252,16 @@ const layout = StyleSheet.create({
   brandName: { fontFamily: nativeFont.bold, fontSize: 18, lineHeight: 26 },
   caption: { fontSize: 13, lineHeight: 18 },
   live: { width: 12, height: 12, borderRadius: 6 },
+  navigationSafe: { backgroundColor: colors.panel },
   navigation: {
     flexDirection: "row",
+    gap: spacing.xs,
     backgroundColor: colors.panel,
     borderTopColor: colors.subtleBorder,
     borderTopWidth: 1,
     paddingHorizontal: spacing.xs,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.md,
   },
   tab: { flex: 1, alignItems: "center", gap: 2, minHeight: 52 },
   tabIcon: { width: 56, height: 32, alignItems: "center", justifyContent: "center" },

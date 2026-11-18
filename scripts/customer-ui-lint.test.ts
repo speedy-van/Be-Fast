@@ -1,5 +1,5 @@
 import { ESLint } from "eslint";
-import { describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test } from "vitest";
 
 const eslint = new ESLint();
 const customerPath = "apps/customer/src/ui-lint-fixture.tsx";
@@ -13,6 +13,11 @@ async function findings(source: string, filePath = customerPath) {
 }
 
 describe("customer UI lint", () => {
+  beforeAll(async () => {
+    // Load the workspace config and TypeScript parser before timing the rules.
+    await eslint.calculateConfigForFile(customerPath);
+  });
+
   test.each([
     "export const view = <Text>مرحبا</Text>;",
     'export const field = <Input placeholder="اسم" />;',
